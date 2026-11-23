@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="nx-mode" content="local">
+<meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#0a0a0c">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icone-192.png">
@@ -133,6 +134,8 @@ input[type=range]{width:100%;accent-color:var(--rg)}
 .gros.t{background:radial-gradient(120% 120% at 100% 0%,#9cc3ea,#3a6a9c 55%,#122236)}
 .gros.e{background:radial-gradient(120% 120% at 100% 0%,#b79cf0,#5a3a9a 55%,#1d1233)}
 .lienb{background:none;border:0;padding:0 0 0 6px;color:var(--mu);text-decoration:underline;font-size:12px}
+.gros.m{background:radial-gradient(120% 120% at 100% 0%,#ff9ec4,#b03a6e 55%,#3a0f24)}
+.gros.p{background:radial-gradient(120% 120% at 100% 0%,#8fe3d0,#2a8f7a 55%,#0d2e27)}
 .gros.a{background:radial-gradient(120% 120% at 100% 0%,#f3dc96,#a37d26 55%,#2e2309)}
 .sos2{grid-template-columns:1fr 1fr}
 .gros{min-height:130px}
@@ -278,7 +281,7 @@ async function creer(pin){
   const sp = alea(16), sr = alea(16);
   COFFRE = {v:1, iter:ITER, sp:b64(sp), sr:b64(sr),
     kp: await chiffre(await cle(pin, sp), DKRAW),
-    kr: await chiffre(await cle(normSecours(code), sr), DKRAW), d:null};
+    kr: await chiffre(await cle(normSecours(code), sr), DKRAW), d:null, pinMaj:Date.now()};
   S = donneesInitiales();
   await sauver(true);
   return code;
@@ -291,7 +294,7 @@ async function ouvrir(secret, parSecours){
   completer();
 }
 async function changerCode(pin){
-  const sp = alea(16); COFFRE.sp = b64(sp); COFFRE.kp = await chiffre(await cle(pin, sp), DKRAW); await sauver(true);
+  const sp = alea(16); COFFRE.sp = b64(sp); COFFRE.kp = await chiffre(await cle(pin, sp), DKRAW); COFFRE.pinMaj = Date.now(); await sauver(true);
 }
 async function nouveauSecours(){
   const code = genereSecours(), sr = alea(16);
@@ -304,8 +307,9 @@ async function sauver(force){
   if (!DK || !S || (!sale && !force)) return;
   clearTimeout(tSauve);
   try {
+    marquer();
     COFFRE.d = await chiffre(DK, enc.encode(JSON.stringify(S)));
-    await ecrireCoffre(COFFRE); sale = false;
+    await ecrireCoffre(COFFRE); sale = false; apresSauvegarde();
     $("#etat").textContent = "Enregistré · " + new Date().toLocaleTimeString("fr-FR", {hour:"2-digit", minute:"2-digit"});
   } catch (e) { $("#etat").textContent = "⚠ Non enregistré — réessai…"; setTimeout(() => sauver(true), 4000); }
 }
@@ -320,6 +324,7 @@ function donneesInitiales(){
     journal:[{id:uid(), date:a, titre:"Ma première page", humeur:0, texte:C.premierePage.join("\n\n")}],
     geles:[], envies:[], coleres:[], seances:[], mesures:[], attente:[], soucis:[],
     defi30:{debut:"2026-11-17", duree:30, jours:{}},
+    social:{exag:[], defis:DEFIS_SOCIAUX.map(x => ({t:x, fait:0, avant:null, apres:null, date:""}))}, verites:[], manque:[], focus:{sessions:[], parking:[]},
     esprit:{derniere:"2026-11-14", record:0, victoires:0, rechutes:[]},
     courses:["Gainer","Créatine","Lait","Bananes","Pâte d'arachide","Flocons d'avoine"].map(t => ({t, ok:0})),
     planning:C.semaineType.map(r => r.slice()),
@@ -380,7 +385,9 @@ function semaineStats(l){
     propres: jours.filter(propre).length,
     colere: c.length ? (c.reduce((a, j) => a + j.colere, 0) / c.length).toFixed(1) : "—",
     stress: (() => { const s = jours.filter(j => j && j.stress != null); return s.length ? (s.reduce((a, j) => a + j.stress, 0) / s.length).toFixed(1) : "—"; })(),
-    patient: jours.filter(j => j && j.patient).length
+    patient: jours.filter(j => j && j.patient).length,
+    parole: jours.filter(j => j && j.parole).length,
+    courage: jours.filter(j => j && j.courage).length
   };
 }
 
@@ -402,6 +409,8 @@ const IC = {
   boutique:'<path d="M4 9.5 5.5 4h13L20 9.5M5.5 12v8h13v-8M4 9.5h16"/>',
   eclair:'<path d="M13 2.5 5 13.5h6.5L10.5 21.5 19 10h-6.5z"/>',
   cadenas:'<rect x="4.5" y="10.5" width="15" height="11" rx="2"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/>',
+  focus:'<circle cx="12" cy="13" r="7.5"/><path d="M12 9.5V13l2.5 1.5M9.5 2.5h5M12 2.5v3"/>',
+  social:'<circle cx="9" cy="8" r="3"/><path d="M3.5 19c.6-3 2.8-5 5.5-5s4.9 2 5.5 5"/><circle cx="17" cy="9" r="2.4"/><path d="M15.5 14.2c2.4-.4 4.4 1.2 5 4.3"/>',
   gear:'<circle cx="12" cy="12" r="3.2"/><path d="M19.4 13.5a7.6 7.6 0 0 0 0-3l2-1.6-2-3.4-2.4.9a7.6 7.6 0 0 0-2.6-1.5L14 2.5h-4l-.4 2.4A7.6 7.6 0 0 0 7 6.4l-2.4-.9-2 3.4 2 1.6a7.6 7.6 0 0 0 0 3l-2 1.6 2 3.4 2.4-.9a7.6 7.6 0 0 0 2.6 1.5l.4 2.4h4l.4-2.4a7.6 7.6 0 0 0 2.6-1.5l2.4.9 2-3.4z"/>'
 };
 const ic = (n) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${IC[n]}</svg>`;
@@ -472,18 +481,21 @@ function entrer(){
   OUVERT = true; derniereActivite = Date.now();
   $("#verrou").hidden = true; $("#app").hidden = false;
   JOUR = auj(); va("auj");
+  marquer(true); SYNC_CFG = S.sync && S.sync.actif ? S.sync : null; synchroniser(); planifierResume();
 }
 async function verrouiller(){
   if (!OUVERT) return;
   fermeCalque();
-  await sauver();
+  await sauver(); clearTimeout(tResume); if (SERVEUR && S) await ecrireResume();
+  if (SYNC_CFG) await Promise.race([pousser(), new Promise(r => setTimeout(r, 5000))]);
+  SYNC_CFG = null; EMPREINTES = null;
   OUVERT = false; S = null; DK = null; if (DKRAW) DKRAW.fill(0); DKRAW = null;
   $("#main").innerHTML = ""; $("#app").hidden = true; $("#verrou").hidden = false;
   ecranVerrou("ouvrir");
 }
 
 /* =================== navigation =================== */
-const PAGES = [["auj","Aujourd'hui"],["journal","Journal"],["sos","SOS"],["salle","Salle & corps"],["semaine","Ma semaine"],["maman","Maman"],["ennui","Anti-ennui"],["regl","Réglages"]];
+const PAGES = [["auj","Aujourd'hui"],["journal","Journal"],["sos","SOS"],["focus","Focus"],["social","Moi & les autres"],["salle","Salle & corps"],["semaine","Ma semaine"],["maman","Maman"],["ennui","Anti-ennui"],["regl","Réglages"]];
 let PAGE = "auj", JOUR = null, ENTREE = null, LUNDI = null;
 function va(p){
   PAGE = p;
@@ -538,7 +550,8 @@ VUES.auj = () => {
       <div class="ligne"><span class="lib">Humeur</span><div class="faces">${FACES.map((f, i) => `<button class="${j.humeur === i+1 ? "on" : ""}" data-k="humeur" data-v="${i+1}" data-numv="1">${f}</button>`).join("")}</div></div>
       <div class="ligne"><span class="lib">Colère</span><input type="range" min="0" max="10" data-k="colere" data-num="1" data-live="colv" value="${j.colere ?? 0}" style="flex:1"><span class="colv" id="colv" style="color:${(j.colere ?? 0) >= 7 ? "var(--rg)" : "inherit"}">${j.colere ?? "–"}</span></div>
       <div class="ligne"><span class="lib">Stress</span><input type="range" min="0" max="10" data-k="stress" data-num="1" data-live="strv" value="${j.stress ?? 0}" style="flex:1;accent-color:var(--am)"><span class="colv" id="strv" style="color:${(j.stress ?? 0) >= 7 ? "var(--rg)" : "inherit"}">${j.stress ?? "–"}</span></div>
-      <div class="ligne">${tog("maitre", j.maitre, "Resté maître de moi", "vt")}${tog("patient", j.patient, "J'ai su attendre", "vt")}<button class="btn rg pt" data-nav="sos" style="margin-left:auto">SOS</button></div></div>
+      <div class="ligne">${tog("maitre", j.maitre, "Resté maître de moi", "vt")}${tog("patient", j.patient, "J'ai su attendre", "vt")}${tog("parole", j.parole, "Parole juste", "vt")}${tog("courage", j.courage, "Un pas de courage", "vt")}<button class="btn rg pt" data-nav="sos" style="margin-left:auto">SOS</button></div>
+      <div class="ligne"><span class="lib">Respirer</span><div class="chips">${[1,2,3].map(n => `<button class="chip ${(j.respi || 0) >= n ? "on vt" : ""}" data-k="respi" data-v="${(j.respi || 0) === n ? n - 1 : n}" data-numv="1">${["matin","midi","soir"][n - 1]}</button>`).join("")}</div><button class="btn sec pt" data-act="respi-go" style="margin-left:auto">5 min</button></div></div>
     <div class="carte"><h3>${ic("cible")} Mes missions</h3>
       ${[["taf", we ? "Détente" : "Taf", we ? "ce qui m'a fait du bien" : "ma priorité du jour"], ["bout", "Boutique", "mon action pour la boutique"], ["maman", "Maman", "ce que j'ai fait pour elle"]].map(([k, t, ph]) => `
         <div class="ligne"><span class="lib">${t}</span><input class="t" data-k="${k}.t" value="${esc(j[k].t)}" placeholder="${ph}" style="flex:1"><button class="case ${j[k].ok ? "on" : ""}" data-t="${k}.ok"></button></div>`).join("")}
@@ -585,6 +598,8 @@ VUES.sos = () => {
     <button class="gros f" data-act="sos-envie"><b>Envie de fumer</b><span>L'envie passe en 3 à 5 minutes. On les passe ensemble.</span></button>
     <button class="gros t" data-act="sos-stress"><b>Ma tête tourne</b><span>Stress, pensées en boucle, « qu'est-ce qu'ils pensent de moi ? » : on trie ensemble.</span></button>
     <button class="gros a" data-act="sos-attente"><b>Je le veux tout de suite</b><span>Une envie, un achat, une décision : elle passe d'abord par la salle d'attente.</span></button>
+    <button class="gros m" data-act="sos-manque"><b>Elle me manque</b><span>Le cœur parle fort ? Tes vérités, puis une action. Pas de message.</span></button>
+    <button class="gros p" data-act="sos-peur"><b>J'ai peur, je tremble</b><span>Avant de parler à quelqu'un ou quand le stress monte : une minute pour te poser.</span></button>
     <button class="gros e" data-act="sos-forte" style="grid-column:1/-1"><b>Envie forte</b><span>Elle monte d'un coup et fort ? Lève-toi : 15 minutes, et tu reprends la main.</span></button>
   </div>
   <div style="margin:-4px 0 16px"><button class="btn sec" data-act="sos-pardon">Un remords revient ? Tourner la page</button></div>
@@ -607,6 +622,9 @@ VUES.sos = () => {
       ${reste > 0 ? '<span class="sub">Patience. Ce qui est écrit pour toi ne t\'échappera pas.</span>' : `<div class="chips"><span class="sub">Toujours envie ?</span><button class="btn pt" data-att="fait" data-id="${a.id}">Oui, je le fais sereinement</button><button class="btn sec pt" data-att="abandon" data-id="${a.id}">Non, finalement</button></div>`}</div>`; }).join("") || '<div class="vide">Rien en attente.</div>'}</div></div>
     <div class="carte"><h3>${ic("mental")} Ma boîte à soucis <small>Rendez-vous à ${esc(S.reglages.rdv || "20:00")}</small></h3><div class="liste">${S.soucis.filter(x => x.etat === "ouvert").map(x => `<div class="it" style="align-items:flex-start"><div style="flex:1"><b>${esc(x.t)}</b><div class="sub">${x.type === "moi" ? "Ça dépend de moi → " + esc(x.action || "") : "Confié à Allah"}</div></div><button class="btn sec pt" data-souci="1" data-id="${x.id}">Réglé ✓</button></div>`).join("") || '<div class="vide">Boîte vide. Tête libre.</div>'}</div></div>
   </div>
+  <div class="carte" style="margin-top:14px"><h3>${ic("maman")} Mes vérités <small>À relire quand elle te manque · ${S.manque.length} vague(s) surmontée(s)</small></h3>
+    <div class="liste">${S.verites.map((v, i) => `<div class="it">${esc(v)}<button class="x" data-act="verite-suppr" data-i="${i}">✕</button></div>`).join("") || '<div class="vide">Écris ce que tu sais au fond de toi.</div>'}</div>
+    <div class="ligne"><input class="t" id="v-nouv" placeholder="Une vérité…" style="flex:1"><button class="btn pt" data-act="verite-ajout">+</button></div></div>
   <div class="carte" style="margin-top:14px"><h3>${ic("mental")} Le rappel</h3><div class="cit">« Le fort n'est pas celui qui terrasse les gens. Le fort est celui qui se maîtrise quand il est en colère. »<b>Hadith — Bukhari, Muslim</b></div>
     ${S.reglages.contact ? `<p class="sub" style="margin-top:10px">Quand ça déborde, j'appelle : <b style="color:var(--tx)">${esc(S.reglages.contact)}</b></p>` : `<p class="sub" style="margin-top:10px">Ajoute dans Réglages la personne calme que tu appelles quand ça déborde.</p>`}</div>`;
 };
@@ -659,6 +677,8 @@ VUES.semaine = () => {
     <div class="stat vt"><div class="v">${st.propres}<small> / 7</small></div><div class="l">Journées propres</div></div>
     <div class="stat"><div class="v">${st.stress}</div><div class="l">Stress moyen / 10</div></div>
     <div class="stat or"><div class="v">${st.patient}<small> / 7</small></div><div class="l">Jours où j'ai su attendre</div></div>
+    <div class="stat vt"><div class="v">${st.parole}<small> / 7</small></div><div class="l">Jours de parole juste</div></div>
+    <div class="stat cy"><div class="v">${S.focus.sessions.filter(s => s.date >= l && s.date <= plus(l, 6)).reduce((a, s) => a + s.minutes, 0)}<small> min</small></div><div class="l">Focus cette semaine</div></div>
   </div>
   <div class="grille">
     <div class="carte"><h3>${ic("foi")} Prières par jour</h3><div class="barres">${st.jours.map((j, i) => `<div><i style="height:${pct(j ? j.pr.filter(Boolean).length : 0, 5)}%"></i><span>${"LMMJVSD"[i]}</span></div>`).join("")}</div></div>
@@ -711,6 +731,15 @@ VUES.regl = () => `<div class="entete"><div><div class="k">MODULE 7</div><h1><em
       <div class="ligne"><span class="lib">J'appelle</span><input class="t" data-reg="contact" value="${esc(S.reglages.contact)}" placeholder="Nom et numéro d'une personne calme" style="flex:1"></div>
       <div class="ligne"><span class="lib">RDV soucis</span><input class="t" type="time" data-reg="rdv" value="${esc(S.reglages.rdv || "20:00")}" style="width:130px"><span class="sub">15 minutes par jour pour les soucis, pas plus</span></div>
       <div class="ligne"><span class="lib">Prix clope</span><input class="t n" type="number" data-reg="prixCig" value="${esc(S.reglages.prixCig)}"> F l'unité</div></div>
+    <div class="carte"><h3>${ic("semaine")} Synchronisation PC ↔ téléphone</h3>
+      <p class="sub">Tes données passent par ton dépôt GitHub <b>privé</b>, toujours chiffrées avec ton code : GitHub ne peut pas les lire.</p>
+      ${S.sync && S.sync.actif ? `<p>Dépôt : <b>${esc(S.sync.owner)}/${esc(S.sync.repo)}</b><br><span class="sub">État : ${esc(ETAT_SYNC || "en attente")}</span></p>
+        <div class="ligne"><button class="btn pt" data-act="sync-go">Synchroniser maintenant</button><button class="btn sec pt" data-act="sync-off">Désactiver</button></div>`
+      : `<div class="ligne"><input class="t" id="sy-token" type="password" placeholder="Jeton GitHub (github_pat_…)" style="flex:1"></div>
+        <div class="ligne"><input class="t" id="sy-repo" value="nx-donnees" style="flex:1"><button class="btn pt" data-act="sync-on">Activer</button></div>`}</div>
+    ${SERVEUR ? `<div class="carte"><h3>${ic("mental")} Résumé pour Claude</h3>
+      <p class="sub">À chaque enregistrement, NX écrit sur ce PC un résumé de tes 14 derniers jours, que Claude lit au début de vos conversations pour suivre où tu en es. Ce fichier n'est <b>pas chiffré</b> : il reste dans le dossier caché du module.</p>
+      <div class="ligne"><button class="chip ${S.reglages.resumeClaude === false ? "" : "on vt"}" data-act="resume-bascule"><span class="pt"></span>${S.reglages.resumeClaude === false ? "Désactivé" : "Activé"}</button></div></div>` : ""}
     <div class="carte"><h3>${ic("journal")} Sauvegardes</h3>
       <p class="sub" id="info-don">${SERVEUR ? "Copies automatiques toutes les 10 minutes." : "Mode sans serveur : les données sont dans le navigateur. Fais des copies !"}</p>
       <div class="ligne"><button class="btn pt" data-act="export">Télécharger une copie chiffrée</button><label class="btn sec pt" style="cursor:pointer">Restaurer une copie<input type="file" id="import" accept=".json" hidden></label></div>
@@ -758,6 +787,7 @@ document.addEventListener("click", async (e) => {
   if (d.k && d.v !== undefined && PAGE === "auj") { const j = J(JOUR); let v = d.numv ? +d.v : d.v; if (!d.numv && j[d.k] === v) v = ""; setChemin(j, d.k, v); sauverBientot(); return rendre(); }
   if (d.entree) { ENTREE = d.entree; return rendre(); }
   if (d.jh) { const en = S.journal.find(x => x.id === ENTREE); en.humeur = +d.jh; sauverBientot(); return rendre(); }
+  if (d.fmin) { VUES.focus.min = +d.fmin; document.querySelectorAll("[data-fmin]").forEach(x => x.classList.toggle("on", x === b)); return; }
   if (d.semnote) { (S.semaines[LUNDI] = S.semaines[LUNDI] || {}).note = +d.semnote; sauverBientot(); return rendre(); }
   if (d.course) { const c = S.courses[+d.course]; c.ok = c.ok ? 0 : 1; sauverBientot(); return rendre(); }
   if (d.idee) { const x = S.maman.idees[+d.idee]; x.ok = x.ok ? 0 : auj(); sauverBientot(); return rendre(); }
@@ -804,6 +834,22 @@ const ACTIONS = {
   "sos-colere": () => sosColere(0),
   "sos-envie": () => sosEnvie(),
   "sos-forte": () => sosForte(),
+  "sync-on": () => activerSync(),
+  "sync-go": () => { toast("Synchronisation…"); synchroniser(); },
+  "sync-off": () => { if (!confirm("Désactiver la synchronisation sur cet appareil ?")) return; S.sync = {...S.sync, actif:false}; SYNC_CFG = null; sauverBientot(); rendre(); },
+  "resume-bascule": () => { S.reglages.resumeClaude = S.reglages.resumeClaude === false; sauverBientot(); rendre(); },
+  "sos-manque": () => sosManque(0),
+  "sos-peur": () => sosPeur(),
+  "focus-go": () => lancerFocus(val("f-obj"), VUES.focus.min || 25),
+  "respi-go": () => respirer(5),
+  "respi-court": () => respirer(1),
+  "park-souci": (b) => { const p = S.focus.parking.splice(+b.dataset.i, 1)[0]; S.soucis.push({id:uid(), t:p.t, type:"moi", action:"", cree:Date.now(), etat:"ouvert"}); sauverBientot(); rendre(); toast("Rangé dans ta boîte à soucis."); },
+  "park-suppr": (b) => { S.focus.parking.splice(+b.dataset.i, 1); sauverBientot(); rendre(); },
+  "exag": () => exagerer(),
+  "courage-fait": (b) => courageFait(+b.dataset.i),
+  "courage-ajout": () => { const v = val("c-defi").trim(); if (!v) return; S.social.defis.push({t:v, fait:0, avant:null, apres:null, date:""}); sauverBientot(); rendre(); },
+  "verite-ajout": () => { const v = val("v-nouv").trim(); if (!v) return; S.verites.push(v); sauverBientot(); rendre(); },
+  "verite-suppr": (b) => { S.verites.splice(+b.dataset.i, 1); sauverBientot(); rendre(); },
   "esprit-rate": () => { if (!confirm("Rechute « esprit clair » aujourd'hui ? Le compteur repart à zéro, sans jugement.")) return; espritRechute(); },
   "defi-ok": () => { S.defi30.jours[auj()] = 1; sauverBientot(); rendre(); toast("Un jour de plus. Tu tiens. 💪"); },
   "defi-rate": () => { if (!confirm("Tu as écrit ou regardé ses statuts aujourd'hui ?")) return; S.defi30.jours[auj()] = -1; sauverBientot(); rendre();
@@ -834,7 +880,8 @@ function actionGel(a, id){
 let minuteurs = [];
 const stopMinuteurs = () => { minuteurs.forEach(clearTimeout); minuteurs.forEach(clearInterval); minuteurs = []; };
 function ouvreCalque(html){ $("#cbox").innerHTML = html; $("#calque").hidden = false; }
-function fermeCalque(){ stopMinuteurs(); $("#calque").hidden = true; $("#cbox").innerHTML = ""; if (OUVERT && PAGE === "sos") rendre(); }
+function fermeCalque(){ stopMinuteurs(); ACTIF = false; if (VERROU_ECRAN) { VERROU_ECRAN.release().catch(() => {}); VERROU_ECRAN = null; }
+  $("#calque").hidden = true; $("#cbox").innerHTML = ""; if (OUVERT && ["sos", "focus", "social", "auj"].includes(PAGE)) rendre(); }
 let SOS = {};
 function sosColere(etape){
   stopMinuteurs();
@@ -996,6 +1043,395 @@ function sosPardon(){
   };
 }
 
+
+/* =================== Focus, respiration, social, manque =================== */
+const DEFIS_SOCIAUX = [
+  "Dire bonjour en premier à 3 personnes aujourd'hui",
+  "Regarder dans les yeux pendant toute une conversation",
+  "Poser une question ouverte à un client et écouter la réponse jusqu'au bout",
+  "Saluer quelqu'un à la salle et lui demander un conseil",
+  "Rester 10 minutes après Jumu'a pour saluer des gens",
+  "Appeler quelqu'un au lieu de lui écrire",
+  "Raconter une histoire sans rien exagérer",
+  "Donner mon avis calmement dans une discussion",
+  "Dire « je ne sais pas » au lieu d'inventer",
+  "Présenter mon activité à quelqu'un que je ne connais pas",
+  "Faire un compliment sincère à quelqu'un",
+  "Prendre la parole devant un groupe de 3 personnes ou plus"
+];
+let ACTIF = false, VERROU_ECRAN = null;
+async function garderEcran(){ try { if ("wakeLock" in navigator) VERROU_ECRAN = await navigator.wakeLock.request("screen"); } catch (e) {} }
+
+function lancerFocus(obj, min){
+  stopMinuteurs(); ACTIF = true; garderEcran();
+  const debut = Date.now(), fin = debut + min * 60000; let fini = false;
+  ouvreCalque(`<div class="th">Focus · ${min} min</div><h2>${esc(obj || "Une seule tâche")}</h2><div class="chrono" id="chrono"></div>
+    <p class="sub">Téléphone retourné. Une chose à la fois.</p>
+    <div class="ligne" style="max-width:480px;margin:10px auto 0"><input class="t" id="garer" placeholder="Une pensée te distrait ? Gare-la ici…" style="flex:1"><button class="btn sec pt" id="g">Garer</button></div>
+    <div class="sub" id="gare" style="margin-top:6px"></div>
+    <div class="act"><button class="btn sec" id="stop">Arrêter</button></div>`);
+  const termine = (m) => { if (fini) return; fini = true; stopMinuteurs();
+    S.focus.sessions.push({date:auj(), t:obj || "", minutes:m}); sauverBientot();
+    ouvreCalque(`<div class="th" style="color:var(--vt)">Session terminée</div><h2>${m} minutes de vrai travail.</h2>
+      <p>Pause de 5 minutes : lève-toi, bois de l'eau, regarde au loin. Puis une autre, si tu veux.</p><div class="act"><button class="btn" data-act="fermer">Fermer</button></div>`); };
+  const maj = () => { const c = $("#chrono"); if (!c || fini) return; const r = Math.max(0, fin - Date.now()), p = (1 - r / (min * 60000)) * 100, s = Math.ceil(r / 1000);
+    c.style.background = `conic-gradient(var(--or) ${p}%, #222226 ${p}%)`;
+    c.innerHTML = `<div style="width:160px;height:160px;border-radius:50%;background:#121214;display:grid;place-items:center">${Math.floor(s / 60)}:${pad(s % 60)}</div>`;
+    if (r <= 0) termine(min); };
+  maj(); minuteurs.push(setInterval(maj, 1000));
+  const garer = () => { const v = $("#garer").value.trim(); if (!v) return; S.focus.parking.push({t:v, date:auj()}); sauverBientot(); $("#garer").value = ""; $("#gare").textContent = "Garée ✓ Reviens à ta tâche."; };
+  $("#g").onclick = garer; $("#garer").onkeydown = (e) => { if (e.key === "Enter") garer(); };
+  $("#stop").onclick = () => { const m = Math.floor((Date.now() - debut) / 60000); if (m >= 5) termine(m); else fermeCalque(); };
+}
+
+function respirer(min){
+  stopMinuteurs(); ACTIF = true; garderEcran();
+  const total = min * 60, t0 = Date.now(); let ins = true;
+  ouvreCalque(`<div class="th">Cohérence cardiaque</div><h2>Inspire 5 s · Expire 5 s</h2>
+    <div class="souffle" id="bulle"><b id="ph">Inspire</b></div><div class="sub" id="reste"></div>
+    <p class="sub">Par le nez, doucement, avec le ventre. Rien d'autre à faire.</p>
+    <div class="act"><button class="btn sec" id="stop">Arrêter</button></div>`);
+  const phase = () => { const b = $("#bulle"); if (!b) return; b.style.transitionDuration = "5000ms"; b.style.transform = ins ? "scale(1)" : "scale(.55)"; $("#ph").textContent = ins ? "Inspire" : "Expire"; ins = !ins; };
+  minuteurs.push(setTimeout(phase, 60)); minuteurs.push(setInterval(phase, 5000));
+  minuteurs.push(setInterval(() => { const r = Math.max(0, total - Math.floor((Date.now() - t0) / 1000)); const e = $("#reste"); if (e) e.textContent = Math.floor(r / 60) + ":" + pad(r % 60);
+    if (r === 0) { stopMinuteurs(); const j = J(auj()); j.respi = Math.min(3, (j.respi || 0) + 1); sauverBientot();
+      ouvreCalque(`<h2>Bien.</h2><p>Ton cœur et ta tête ont ralenti. Respiration ${j.respi} / 3 aujourd'hui.</p><div class="act"><button class="btn" data-act="fermer">Fermer</button></div>`); } }, 1000));
+  $("#stop").onclick = () => fermeCalque();
+}
+
+function sosPeur(){
+  stopMinuteurs(); ACTIF = true;
+  ouvreCalque(`<div class="th" style="color:#8fe3d0">J'ai peur, je tremble</div><h2>Le soupir qui calme.</h2>
+    <p>Deux inspirations par le nez, puis une longue expiration par la bouche. Ton corps comprend vite qu'il n'y a pas de danger.</p>
+    <div class="souffle" id="bulle" style="border-color:rgba(143,227,208,.6);background:radial-gradient(circle,rgba(143,227,208,.35),rgba(143,227,208,.08) 60%,transparent 70%)"><b id="ph">Prêt</b></div>
+    <div class="sub" id="cyc"></div>
+    <p class="sub">Pieds à plat, épaules basses, parle lentement. Les autres voient ton trac bien moins que tu ne le crois.</p>
+    <div class="act"><button class="btn" id="fini">Ça va mieux</button></div>`);
+  const P = [["Inspire (nez)", 1800, .85], ["Encore un peu", 1200, 1], ["Expire longuement", 6000, .5]];
+  let i = 0, c = 0;
+  const tour = () => { const b = $("#bulle"); if (!b) return; const [txt, ms, sc] = P[i]; b.style.transitionDuration = ms + "ms"; b.style.transform = `scale(${sc})`; $("#ph").textContent = txt;
+    minuteurs.push(setTimeout(() => { i = (i + 1) % 3; if (i === 0) { c++; const y = $("#cyc"); if (y) y.textContent = c + " / 6"; } if (c < 6) tour(); else if ($("#ph")) $("#ph").textContent = "Bien."; }, ms)); };
+  minuteurs.push(setTimeout(tour, 400));
+  $("#fini").onclick = () => { fermeCalque(); toast("Tu as repris la main sur ton corps. 💪"); };
+}
+
+function sosManque(etape){
+  stopMinuteurs();
+  if (etape === 0) {
+    SOS = {};
+    ouvreCalque(`<div class="th" style="color:#ff9ec4">Elle me manque</div><h2>Ça fait mal. C'est normal.</h2>
+      <p>Tu peux encore l'aimer et quand même avancer. Un amour qu'on ne nourrit plus s'éteint doucement, et chaque fois que tu n'agis pas, il s'éteint un peu plus.</p>
+      <p class="sub">Le manque maintenant :</p><input type="range" min="0" max="10" value="7" id="mavant" style="max-width:360px;accent-color:#ff9ec4"><div class="colv" id="mav" style="text-align:center">7</div>
+      <div class="act"><button class="btn" id="m1">Continuer</button></div>`);
+    $("#mavant").oninput = (e) => $("#mav").textContent = e.target.value;
+    $("#m1").onclick = () => { SOS.avant = +$("#mavant").value; sosManque(1); };
+  } else if (etape === 1) {
+    const V = S.verites;
+    ouvreCalque(`<div class="th" style="color:#ff9ec4">Tes vérités</div><h2>Ce que tu sais, au fond.</h2>
+      ${V.length ? `<div class="liste" style="text-align:left">${V.map(v => `<div class="it">${esc(v)}</div>`).join("")}</div>`
+        : `<p>Écris 3 vérités que tu connais au fond de toi. Par exemple : « Elle a choisi de partir. » « Je mérite quelqu'un qui me choisit aussi. »</p>${[1,2,3].map(k => `<input class="t" id="v${k}" placeholder="Vérité ${k}" style="margin-top:8px">`).join("")}`}
+      <div class="act"><button class="btn" id="m2">${V.length ? "Je les relis, et j'avance" : "Je les garde"}</button></div>`);
+    $("#m2").onclick = () => { if (!V.length) { [1,2,3].forEach(k => { const v = $("#v" + k).value.trim(); if (v) S.verites.push(v); }); sauverBientot(); } sosManque(2); };
+  } else {
+    ouvreCalque(`<div class="th" style="color:var(--vt)">Maintenant, une action</div><h2>Transforme le manque en élan.</h2>
+      <div class="act" style="flex-direction:column;align-items:center">
+        <button class="btn" id="a1">Une session focus de 25 minutes</button>
+        <button class="btn sec" id="a2">Respirer 5 minutes</button>
+        <button class="btn sec" id="a3">20 pompes, puis une idée anti-ennui</button>
+        ${S.reglages.contact ? `<button class="btn sec" id="a4">Appeler ${esc(S.reglages.contact)}</button>` : ""}</div>`);
+    const note = () => { S.manque.push({t:Date.now(), avant:SOS.avant}); sauverBientot(); };
+    $("#a1").onclick = () => { note(); lancerFocus("Transformer le manque en élan", 25); };
+    $("#a2").onclick = () => { note(); respirer(5); };
+    $("#a3").onclick = () => { note(); fermeCalque(); VUES.ennui.tir = S.ennui[Math.floor(Math.random() * S.ennui.length)]; va("ennui"); };
+    if ($("#a4")) $("#a4").onclick = () => { note(); fermeCalque(); toast("Appelle-le maintenant. 📞"); };
+  }
+}
+
+function exagerer(){
+  let cor = "pas";
+  ouvreCalque(`<div class="th">Parole juste</div><h2>Ça arrive. On corrige.</h2>
+    <div style="text-align:left"><p class="sub">Ce que j'ai dit</p><textarea class="t" id="e1" style="min-height:60px"></textarea>
+      <p class="sub">La vérité</p><textarea class="t" id="e2" style="min-height:60px"></textarea>
+      <p class="sub">Je corrige auprès de la personne ?</p><div class="chips"><button class="chip" data-cor="oui">Oui</button><button class="chip" data-cor="non">Non</button><button class="chip on" data-cor="pas">Pas nécessaire</button></div></div>
+    <div class="act"><button class="btn" id="ok">Noter</button><button class="btn sec" data-act="fermer">Annuler</button></div>`);
+  document.querySelectorAll("[data-cor]").forEach(b => b.onclick = () => { cor = b.dataset.cor; document.querySelectorAll("[data-cor]").forEach(x => x.classList.toggle("on", x === b)); });
+  $("#ok").onclick = () => { if (!$("#e1").value.trim()) return toast("Écris ce que tu as dit.");
+    S.social.exag.push({id:uid(), date:auj(), dit:$("#e1").value.trim(), vrai:$("#e2").value.trim(), corrige:cor}); J(auj()).parole = 0; sauverBientot(); fermeCalque();
+    toast("Noté. Le reconnaître, c'est déjà parler juste."); };
+}
+
+function courageFait(i){
+  const x = S.social.defis[i];
+  ouvreCalque(`<div class="th" style="color:var(--vt)">Un pas de courage</div><h2>${esc(x.t)}</h2>
+    <p class="sub">Ta peur juste avant :</p><input type="range" min="0" max="10" value="6" id="pa" style="max-width:360px"><div class="colv" id="pav" style="text-align:center">6</div>
+    <p class="sub">Ta peur juste après :</p><input type="range" min="0" max="10" value="3" id="pp" style="max-width:360px"><div class="colv" id="ppv" style="text-align:center">3</div>
+    <div class="act"><button class="btn" id="ok">C'est fait ✓</button><button class="btn sec" data-act="fermer">Annuler</button></div>`);
+  $("#pa").oninput = (e) => $("#pav").textContent = e.target.value; $("#pp").oninput = (e) => $("#ppv").textContent = e.target.value;
+  $("#ok").onclick = () => { Object.assign(x, {fait:1, date:auj(), avant:+$("#pa").value, apres:+$("#pp").value}); J(auj()).courage = 1; sauverBientot(); fermeCalque();
+    toast("Regarde : la peur d'après est presque toujours plus petite. 💪"); };
+}
+
+VUES.focus = () => {
+  const a = auj(), l = lundi(a), j = peek(a) || {};
+  const minSem = S.focus.sessions.filter(s => s.date >= l && s.date <= plus(l, 6)).reduce((x, s) => x + s.minutes, 0);
+  const m = VUES.focus.min || 25;
+  return `<div class="entete"><div><div class="k">PRODUCTIF, PAS OCCUPÉ</div><h1><em>Focus</em></h1></div></div>
+  <div class="stats">
+    <div class="stat or"><div class="v">${S.focus.sessions.filter(s => s.date === a).length}</div><div class="l">Sessions aujourd'hui</div></div>
+    <div class="stat cy"><div class="v">${minSem}<small> min</small></div><div class="l">Concentré cette semaine</div></div>
+    <div class="stat vt"><div class="v">${j.respi || 0}<small> / 3</small></div><div class="l">Respirations aujourd'hui</div></div>
+  </div>
+  <div class="grille">
+    <div class="carte"><h3>${ic("focus")} Une session focus</h3>
+      <p class="sub">Une seule tâche, téléphone retourné. Si une pensée (ou elle) te traverse la tête, tu la gares et tu reviens.</p>
+      <div class="ligne"><input class="t" id="f-obj" placeholder="Mon objectif pour cette session" style="flex:1"></div>
+      <div class="ligne"><div class="chips">${[25, 45, 60].map(x => `<button class="chip ${x === m ? "on" : ""}" data-fmin="${x}">${x} min</button>`).join("")}</div><button class="btn" data-act="focus-go" style="margin-left:auto">Démarrer</button></div></div>
+    <div class="carte"><h3>${ic("foi")} Respirer · cohérence cardiaque</h3>
+      <p class="sub">5 secondes pour inspirer, 5 pour expirer, pendant 5 minutes. Le matin, le midi et le soir : l'antistress le plus simple qui existe.</p>
+      <div class="ligne"><button class="btn" data-act="respi-go">Respirer 5 minutes</button><button class="btn sec" data-act="respi-court">1 minute</button></div></div>
+    <div class="carte large"><h3>${ic("journal")} Mon parking à pensées <small>Gare-les ici, traite-les plus tard</small></h3>
+      <div class="liste">${S.focus.parking.map((p, i) => `<div class="it"><span class="sub" style="min-width:60px">${courte(p.date)}</span>${esc(p.t)}<button class="btn sec pt" data-act="park-souci" data-i="${i}" style="margin-left:auto">→ boîte à soucis</button><button class="x" data-act="park-suppr" data-i="${i}">✕</button></div>`).join("") || '<div class="vide">Rien de garé.</div>'}</div></div>
+    <div class="carte large"><h3>${ic("trophee")} Mes dernières sessions</h3>
+      <div class="liste">${S.focus.sessions.slice(-8).reverse().map(s => `<div class="it"><span class="sub" style="min-width:60px">${courte(s.date)}</span>${esc(s.t || "Session")}<span class="sub" style="margin-left:auto">${s.minutes} min</span></div>`).join("") || '<div class="vide">Ta première session t\'attend.</div>'}</div></div>
+  </div>`;
+};
+
+VUES.social = () => {
+  const a = auj(), sept = [0,1,2,3,4,5,6].map(i => peek(plus(a, -i)));
+  const D = S.social.defis, faits = D.filter(x => x.fait);
+  const moy = (k) => faits.length ? (faits.reduce((s, x) => s + (x[k] ?? 0), 0) / faits.length).toFixed(1) : "–";
+  return `<div class="entete"><div><div class="k">PARLER JUSTE · OSER</div><h1>Moi & <em>les autres</em></h1></div></div>
+  <div class="stats">
+    <div class="stat or"><div class="v">${sept.filter(j => j && j.parole).length}<small> / 7</small></div><div class="l">Jours de parole juste</div></div>
+    <div class="stat cy"><div class="v">${sept.filter(j => j && j.courage).length}<small> / 7</small></div><div class="l">Jours avec un pas de courage</div></div>
+    <div class="stat vt"><div class="v">${faits.length}<small> / ${D.length}</small></div><div class="l">Défis de courage réussis</div></div>
+    <div class="stat"><div class="v">${moy("avant")} → ${moy("apres")}</div><div class="l">Peur avant → après</div></div>
+  </div>
+  <div class="grille">
+    <div class="carte"><h3>${ic("mental")} Parole juste</h3>
+      <p class="sub">Avant de parler, trois questions : <b style="color:var(--tx)">est-ce vrai ? est-ce utile ? est-ce que j'en rajoute ?</b> Tu n'as pas besoin d'en dire plus pour être quelqu'un : ce que tu construis parle pour toi.</p>
+      <div class="ligne"><button class="btn sec" data-act="exag">J'ai exagéré ou menti</button></div>
+      <div class="liste" style="margin-top:10px">${S.social.exag.slice(-5).reverse().map(x => `<div class="it" style="flex-direction:column;align-items:flex-start;gap:2px"><span class="sub">${courte(x.date)} · ${x.corrige === "oui" ? "corrigé ✓" : x.corrige === "non" ? "pas corrigé" : "pas nécessaire"}</span><span>J'ai dit : ${esc(x.dit)}</span><span style="color:var(--vt)">La vérité : ${esc(x.vrai)}</span></div>`).join("") || '<div class="vide">Rien de noté. Quand ça arrive, note-le sans honte : c\'est comme ça qu\'on corrige.</div>'}</div></div>
+    <div class="carte"><h3>${ic("social")} Mon kit de conversation</h3>
+      <div class="liste" style="gap:8px">
+        <div><b>4 sujets qui marchent toujours :</b> famille · travail · rêves · loisirs.</div>
+        <div><b>Des questions ouvertes :</b> « Comment… ? », « Qu'est-ce qui… ? », « Raconte-moi… »</div>
+        <div><b>Écoute deux fois plus que tu ne parles.</b> Relance : « Ah oui ? Et après ? »</div>
+        <div><b>Retiens un détail</b> et reparles-en la fois suivante : c'est ce qui marque les gens.</div>
+        <div><b>Pas besoin d'impressionner :</b> on se souvient surtout de la façon dont tu as fait sentir l'autre.</div></div></div>
+    <div class="carte"><h3>${ic("foi")} Quand je tremble</h3>
+      <div class="liste" style="gap:8px">
+        <div><b>Le soupir :</b> deux inspirations par le nez, une longue expiration par la bouche. Trois fois.</div>
+        <div><b>Pieds à plat</b> sur le sol, épaules basses.</div>
+        <div><b>Parle plus lentement</b> que d'habitude : la voix et la bouche se calment.</div>
+        <div><b>Rappelle-toi :</b> les autres remarquent ton trac bien moins que tu ne le crois.</div></div>
+      <div class="ligne"><button class="btn" data-act="sos-peur">Exercice d'une minute</button></div></div>
+    <div class="carte large"><h3>${ic("trophee")} L'échelle du courage <small>Du plus facile au plus dur, à ton rythme</small></h3>
+      <div class="liste">${D.map((x, i) => `<div class="it"><span class="th" style="min-width:24px">${i + 1}</span><div style="flex:1">${esc(x.t)}${x.fait ? `<div class="sub">Fait le ${courte(x.date)} · peur ${x.avant ?? "–"} → ${x.apres ?? "–"}</div>` : ""}</div>${x.fait ? '<span class="propre ok">✓</span>' : `<button class="btn pt" data-act="courage-fait" data-i="${i}">Je l'ai fait</button>`}</div>`).join("")}</div>
+      <div class="ligne"><input class="t" id="c-defi" placeholder="Ajouter un défi à moi…" style="flex:1"><button class="btn pt" data-act="courage-ajout">+</button></div></div>
+  </div>`;
+};
+
+
+/* =================== Synchronisation PC <-> telephone ===================
+   Le coffre CHIFFRE (illisible sans le code) est depose dans un depot GitHub prive.
+   Chaque appareil : a l'ouverture il recupere et fusionne, apres chaque enregistrement il renvoie. */
+const NX_API = (() => { try { return localStorage.getItem("nx-api") || "https://api.github.com"; } catch (e) { return "https://api.github.com"; } })();
+let SYNC_CFG = null, SYNC_EN_COURS = false, ETAT_SYNC = "", tPousse = null, EMPREINTES = null;
+const LISTES_ID = [["journal"], ["geles"], ["attente"], ["soucis"], ["seances"], ["social", "exag"]];
+const EVENEMENTS = [["envies"], ["coleres"], ["manque"], ["mesures"], ["focus", "sessions"], ["esprit", "rechutes"]];
+const prendre = (o, p) => p.reduce((x, k) => (x == null ? undefined : x[k]), o);
+const poser = (o, p, v) => { let x = o; for (let i = 0; i < p.length - 1; i++) x = x[p[i]] = x[p[i]] || {}; x[p[p.length - 1]] = v; };
+const copie = (v) => v === undefined ? undefined : JSON.parse(JSON.stringify(v));
+const shaLu = () => { try { return localStorage.getItem("nx-sync-sha") || ""; } catch (e) { return ""; } };
+const shaEcrit = (s) => { try { localStorage.setItem("nx-sync-sha", s || ""); } catch (e) {} };
+function etatSync(txt){ ETAT_SYNC = txt + " · " + new Date().toLocaleTimeString("fr-FR", {hour:"2-digit", minute:"2-digit"});
+  const e = $("#etat"); if (e) e.textContent = "Synchro : " + ETAT_SYNC; }
+
+// horodatage automatique de ce qui a change depuis le dernier enregistrement (jours, elements avec id) + traces des suppressions
+function marquer(init){
+  const now = Date.now(), nouv = {};
+  const vu = (cle, obj) => { const {_t, ...reste} = obj; const s = JSON.stringify(reste); nouv[cle] = s;
+    if (!init && EMPREINTES && EMPREINTES[cle] !== s) obj._t = now; };
+  for (const [d, j] of Object.entries(S.jours || {})) vu("j:" + d, j);
+  for (const p of LISTES_ID) for (const it of (prendre(S, p) || [])) if (it && it.id) vu("i:" + it.id, it);
+  if (!init && EMPREINTES) for (const cle of Object.keys(EMPREINTES)) if (cle.startsWith("i:") && !(cle in nouv)) (S._suppr = S._suppr || {})[cle.slice(2)] = now;
+  EMPREINTES = nouv;
+  if (!init) S._maj = now;
+}
+
+const vide = (v) => v === null || v === undefined || v === "";
+function fusionJour(ja, jb){
+  // le plus recent gagne ; les cases restees vides chez lui sont completees par l'autre
+  const [n, o] = (jb._t || 0) > (ja._t || 0) || ((jb._t || 0) === (ja._t || 0) && JSON.stringify(jb).length > JSON.stringify(ja).length) ? [jb, ja] : [ja, jb];
+  const r = copie(n);
+  const remplir = (x, y) => { for (const k of Object.keys(y)) {
+    if (vide(x[k]) && !vide(y[k])) x[k] = copie(y[k]);
+    else if (x[k] && typeof x[k] === "object" && y[k] && typeof y[k] === "object" && !Array.isArray(x[k])) remplir(x[k], y[k]); } };
+  remplir(r, o);
+  return r;
+}
+function fusion(a, b){
+  const r = copie(a), tA = a._maj || 0, tB = b._maj || 0, recent = tB > tA ? b : a;
+  const suppr = {...(a._suppr || {})};
+  for (const [k, v] of Object.entries(b._suppr || {})) suppr[k] = Math.max(suppr[k] || 0, v);
+  r._suppr = suppr;
+  r.jours = {...(a.jours || {})};
+  for (const [d, jb] of Object.entries(b.jours || {})) r.jours[d] = r.jours[d] ? fusionJour(r.jours[d], jb) : copie(jb);
+  for (const p of LISTES_ID) {
+    const m = new Map();
+    for (const it of [...(prendre(a, p) || []), ...(prendre(b, p) || [])]) { if (!it || !it.id) continue; const x = m.get(it.id); if (!x || (it._t || 0) > (x._t || 0)) m.set(it.id, it); }
+    poser(r, p, [...m.values()].filter(it => !(suppr[it.id] && suppr[it.id] >= (it._t || 0))).map(copie));
+  }
+  for (const p of EVENEMENTS) {
+    const m = new Map(); for (const it of [...(prendre(a, p) || []), ...(prendre(b, p) || [])]) m.set(JSON.stringify(it), it);
+    poser(r, p, [...m.values()].map(copie));
+  }
+  for (const k of ["reglages", "planning", "courses", "ennui", "maman", "verites", "semaines"]) if (recent[k] !== undefined) r[k] = copie(recent[k]);
+  if (recent.social) r.social.defis = copie(recent.social.defis);
+  if (recent.focus) r.focus.parking = copie(recent.focus.parking);
+  if (a.defi30 || b.defi30) { const vieux = recent === a ? b : a;
+    r.defi30 = {...copie(recent.defi30 || vieux.defi30), jours:{...((vieux.defi30 || {}).jours || {}), ...((recent.defi30 || {}).jours || {})}}; }
+  if (a.esprit || b.esprit) { const ea = a.esprit || {}, eb = b.esprit || {};
+    r.esprit.derniere = [ea.derniere, eb.derniere].filter(Boolean).sort().pop() || ea.derniere;
+    r.esprit.record = Math.max(ea.record || 0, eb.record || 0); r.esprit.victoires = Math.max(ea.victoires || 0, eb.victoires || 0); }
+  r.sync = copie(a.sync);
+  r._maj = Math.max(tA, tB);
+  return r;
+}
+
+const entetesGH = (cfg) => ({Authorization:"Bearer " + cfg.token, Accept:"application/vnd.github+json", "X-GitHub-Api-Version":"2022-11-28"});
+const urlCoffre = (cfg) => `${NX_API}/repos/${cfg.owner}/${cfg.repo}/contents/coffre.json`;
+async function lireDistant(cfg){
+  const r = await fetch(urlCoffre(cfg), {headers:entetesGH(cfg), cache:"no-store"});
+  if (r.status === 404) return null;
+  if (!r.ok) throw new Error("lecture " + r.status);
+  const j = await r.json(); let txt;
+  if (j.content) txt = atob(j.content.replace(/\s/g, ""));
+  else txt = await (await fetch(urlCoffre(cfg), {headers:{...entetesGH(cfg), Accept:"application/vnd.github.raw+json"}, cache:"no-store"})).text();
+  return {coffre:JSON.parse(txt), sha:j.sha};
+}
+async function pousser(){
+  const cfg = SYNC_CFG; clearTimeout(tPousse);
+  if (!cfg || !cfg.actif || !COFFRE || !COFFRE.d) return false;
+  try {
+    const corps = {message:"nx", content:btoa(JSON.stringify(COFFRE))}; const sha = shaLu(); if (sha) corps.sha = sha;
+    const r = await fetch(urlCoffre(cfg), {method:"PUT", headers:{...entetesGH(cfg), "Content-Type":"application/json"}, body:JSON.stringify(corps)});
+    if (r.ok) { shaEcrit((await r.json()).content.sha); etatSync("à jour"); return true; }
+    if ((r.status === 409 || r.status === 422) && S && DK && !SYNC_EN_COURS) { await synchroniser(); return false; }
+    etatSync("erreur " + r.status); return false;
+  } catch (e) { etatSync("hors ligne"); return false; }
+}
+function apresSauvegarde(){
+  clearTimeout(tPousse);
+  if (SYNC_CFG && SYNC_CFG.actif) tPousse = setTimeout(pousser, 4000);
+  planifierResume();
+}
+async function synchroniser(){
+  if (!S || !S.sync || !S.sync.token || !S.sync.actif || SYNC_EN_COURS) return;
+  SYNC_CFG = S.sync; SYNC_EN_COURS = true;
+  try {
+    if (sale) await sauver(true);
+    const dist = await lireDistant(SYNC_CFG);
+    if (!dist) { shaEcrit(""); SYNC_EN_COURS = false; await pousser(); return; }
+    shaEcrit(dist.sha);
+    let dS;
+    try { dS = JSON.parse(dec.decode(await dechiffre(DK, dist.coffre.d))); }
+    catch (e) { SYNC_EN_COURS = false; return lier(dist); }
+    if ((dist.coffre.pinMaj || 0) > (COFFRE.pinMaj || 0)) for (const k of ["kp", "sp", "kr", "sr", "pinMaj"]) COFFRE[k] = dist.coffre[k];
+    const avant = JSON.stringify(S), fus = fusion(S, dS);
+    S = fus; completer(); marquer(true);
+    const sansSync = (o) => JSON.stringify({...o, sync:null});
+    if (JSON.stringify(S) !== avant) { sale = true; await sauver(true); if (OUVERT && $("#calque").hidden) rendre(); }
+    SYNC_EN_COURS = false;
+    if (sansSync(S) !== sansSync(dS)) await pousser(); else etatSync("à jour");
+  } catch (e) { etatSync("hors ligne"); }
+  finally { SYNC_EN_COURS = false; }
+}
+function lier(dist){
+  ouvreCalque(`<div class="th">Synchronisation</div><h2>Lier cet appareil</h2>
+    <p>Ton autre appareil a déjà envoyé ses données. Entre <b>le code d'accès de ton autre appareil</b> (par exemple celui du PC). Ensuite, ce sera le même code sur les deux.</p>
+    <input class="t" type="password" id="lc" placeholder="Code de l'autre appareil" style="max-width:320px">
+    <div class="act"><button class="btn" id="lok">Lier</button><button class="btn sec" id="lno">Plus tard</button></div><div class="vmsg" id="lmsg"></div>`);
+  $("#lc").focus();
+  $("#lok").onclick = async () => {
+    $("#lmsg").textContent = "Vérification…";
+    try {
+      const c = dist.coffre, raw = await dechiffre(await cle($("#lc").value, unb64(c.sp)), c.kp), dk = await importeDK(raw);
+      const dS = JSON.parse(dec.decode(await dechiffre(dk, c.d)));
+      const fus = fusion(S, dS);
+      DKRAW = raw; DK = dk; COFFRE = {...c}; S = fus; completer(); marquer(true); sale = true;
+      await sauver(true); await pousser();
+      fermeCalque(); toast("Appareil lié. Ton code est maintenant le même que sur l'autre appareil."); rendre();
+    } catch (e) { $("#lmsg").textContent = "Code refusé."; }
+  };
+  $("#lno").onclick = () => { fermeCalque(); etatSync("non lié"); };
+}
+async function activerSync(){
+  const token = val("sy-token").trim(), repo = val("sy-repo").trim() || "nx-donnees";
+  if (!token) return toast("Colle ton jeton GitHub.");
+  try {
+    const u = await fetch(NX_API + "/user", {headers:entetesGH({token}), cache:"no-store"});
+    if (!u.ok) return toast("Jeton refusé par GitHub.");
+    const owner = (await u.json()).login;
+    const rp = await fetch(`${NX_API}/repos/${owner}/${repo}`, {headers:entetesGH({token}), cache:"no-store"});
+    if (!rp.ok) return toast("Dépôt « " + repo + " » introuvable avec ce jeton.");
+    if (!(await rp.json()).private && !confirm("Ce dépôt est PUBLIC. Tes données restent chiffrées, mais un dépôt privé est conseillé. Continuer ?")) return;
+    S.sync = {token, owner, repo, actif:true}; SYNC_CFG = S.sync; shaEcrit(""); sale = true; await sauver(true);
+    await synchroniser(); rendre(); toast("Synchronisation activée.");
+  } catch (e) { toast("Pas d'internet, ou GitHub injoignable."); }
+}
+setInterval(() => { if (OUVERT && SYNC_CFG && $("#calque").hidden) synchroniser(); }, 120000);
+document.addEventListener("visibilitychange", () => { if (!document.hidden && OUVERT && SYNC_CFG) synchroniser(); });
+
+/* =================== Resume pour Claude (PC seulement, fichier local non chiffre) =================== */
+let tResume = null;
+function planifierResume(){
+  clearTimeout(tResume);
+  if (!SERVEUR || !S || (S.reglages && S.reglages.resumeClaude === false)) return;
+  tResume = setTimeout(ecrireResume, 6000);
+}
+function resumeTexte(){
+  const a = auj(), jours = Array.from({length:14}, (_, i) => plus(a, -i));
+  const c = (s, n) => String(s || "").replace(/\s+/g, " ").trim().slice(0, n || 400);
+  const o = (v) => v ? "✓" : "·";
+  const I = defiInfos() || {};
+  const L = [];
+  L.push("# NX : résumé pour Claude", "", "Mis à jour le " + new Date().toLocaleString("fr-FR") + ". Fichier local, non chiffré, écrit par NX sur ce PC.", "");
+  L.push("## Repères");
+  L.push(`- Défi 30 jours : jour ${I.n ?? "?"} / ${S.defi30 ? S.defi30.duree : 30}, série ${I.serie ?? 0}, ${I.tenus ?? 0} jour(s) tenu(s) ; rechutes notées : ${Object.entries((S.defi30 || {}).jours || {}).filter(([, v]) => v === -1).map(([d]) => d).join(", ") || "aucune"}`);
+  L.push(`- Esprit clair : ${espritJours()} jour(s) (dernière rechute ${S.esprit.derniere}, record ${S.esprit.record || 0}, ${S.esprit.rechutes.length} rechute(s) notée(s), ${S.esprit.victoires || 0} envie(s) forte(s) vaincue(s))`);
+  L.push(`- Sans cigarette d'affilée : ${serie(x => x && x.cig === 0)} j · journées propres d'affilée : ${serie(propre)} j`);
+  L.push("", "## Les 14 derniers jours", "", "| Date | Prières | Salle | Cig | Humeur | Stress | Colère | Maître | Attendre | Parole | Courage | Respi | Sommeil | Défi |", "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|");
+  for (const d of jours) { const j = peek(d); if (!j) continue;
+    L.push(`| ${d} | ${j.pr.filter(Boolean).length}/5 | ${j.salle || "·"} | ${j.cig ?? "?"} | ${j.humeur || "·"} | ${j.stress ?? "·"} | ${j.colere ?? "·"} | ${o(j.maitre)} | ${o(j.patient)} | ${o(j.parole)} | ${o(j.courage)} | ${j.respi || 0} | ${j.sommeil || "?"} | ${(S.defi30.jours || {})[d] === 1 ? "tenu" : (S.defi30.jours || {})[d] === -1 ? "rechute" : "·"} |`); }
+  L.push("", "### Ce qu'il a écrit, jour par jour");
+  for (const d of jours) { const j = peek(d); if (!j) continue;
+    const champs = [["Question", j.rep], ["Ressenti", j.libre], ["Victoire", j.victoire], ["Je lâche", j.lache], ["Demain", j.demain], ["Taf/détente", j.taf && j.taf.t], ["Boutique", j.bout && j.bout.t], ["Maman", j.maman && j.maman.t], ["Mercis", (j.mercis || []).filter(Boolean).join(" ; ")]].filter(([, v]) => c(v));
+    if (champs.length) L.push(`- **${d}** — ` + champs.map(([k, v]) => `${k} : ${c(v, 600)}`).join(" / ")); }
+  L.push("", "## Journal (14 derniers jours)");
+  for (const e of S.journal.filter(e => e.date >= jours[13]).sort((x, y) => x.date.localeCompare(y.date))) L.push(`### ${e.date} — ${e.titre || "sans titre"}`, c(e.texte, 1800), "");
+  const t14 = Date.now() - 14 * 864e5;
+  L.push("## SOS et outils (14 derniers jours)");
+  L.push(`- Colères désamorcées : ${S.coleres.filter(x => x.t > t14).map(x => `${x.avant}→${x.apres}`).join(", ") || "aucune"}`);
+  L.push(`- Envies de fumer : ${S.envies.filter(x => x.t > t14 && x.res === "tenu").length} tenue(s), ${S.envies.filter(x => x.t > t14 && x.res === "craque").length} craquage(s)`);
+  L.push(`- « Elle me manque » : ${S.manque.filter(x => x.t > t14).map(x => "intensité " + x.avant).join(", ") || "aucune vague notée"}`);
+  L.push(`- Boîte à soucis (ouverte) : ${S.soucis.filter(x => x.etat === "ouvert").map(x => c(x.t, 120) + (x.action ? " → " + c(x.action, 80) : "")).join(" | ") || "vide"}`);
+  L.push(`- Salle d'attente : ${S.attente.filter(x => x.etat === "attente").map(x => c(x.t, 100)).join(" | ") || "vide"}`);
+  L.push(`- Messages gelés : ${S.geles.filter(g => g.cree > t14).map(g => (g.pour ? "pour " + c(g.pour, 30) + " : " : "") + c(g.texte, 300) + " [" + g.etat + "]").join(" | ") || "aucun"}`);
+  L.push(`- Exagérations notées : ${S.social.exag.filter(x => x.date >= jours[13]).map(x => `« ${c(x.dit, 120)} » → vérité « ${c(x.vrai, 120)} » (${x.corrige})`).join(" | ") || "aucune"}`);
+  L.push(`- Échelle du courage : ${S.social.defis.filter(x => x.fait).map(x => `${c(x.t, 80)} (${x.date}, peur ${x.avant}→${x.apres})`).join(" | ") || "aucun défi fait"}`);
+  L.push(`- Focus : ${S.focus.sessions.filter(s => s.date >= jours[6]).reduce((s, x) => s + x.minutes, 0)} min sur 7 jours ; pensées garées : ${S.focus.parking.map(p => c(p.t, 80)).join(" | ") || "aucune"}`);
+  L.push("", "## Ses vérités", ...(S.verites.length ? S.verites.map(v => "- " + c(v, 200)) : ["- (aucune)"]));
+  const l = lundi(a), b = S.semaines[l] || S.semaines[plus(l, -7)];
+  if (b) L.push("", "## Bilan de semaine", ...Object.entries(b).filter(([, v]) => c(v)).map(([k, v]) => `- ${k} : ${c(v, 400)}`));
+  return L.join("\n") + "\n";
+}
+async function ecrireResume(){
+  if (!SERVEUR || !S) return;
+  try { await fetch("/api/resume", {method:"PUT", headers:{"Content-Type":"text/markdown; charset=utf-8", "X-NX":"1"}, body:resumeTexte()}); } catch (e) {}
+}
+
 /* =================== Esprit clair + SOS envie forte =================== */
 function espritJours(){ return S.esprit && S.esprit.derniere ? Math.max(0, ecart(S.esprit.derniere, auj())) : 0; }
 function espritRechute(){
@@ -1048,7 +1484,7 @@ document.addEventListener("visibilitychange", () => { cacheDepuis = document.hid
 setInterval(() => {
   if (!OUVERT) return;
   const lim = (+S.reglages.verrou || 5) * 60000;
-  if (Date.now() - derniereActivite > lim || (cacheDepuis && Date.now() - cacheDepuis > 60000)) verrouiller();
+  if ((!ACTIF && Date.now() - derniereActivite > lim) || (cacheDepuis && Date.now() - cacheDepuis > 60000)) verrouiller();
 }, 10000);
 if (SERVEUR) { const bat = () => fetch("/api/battement", {method:"POST", headers:{"X-NX":"1"}}).catch(() => {}); bat(); setInterval(bat, 30000); }
 window.addEventListener("pagehide", () => { if (OUVERT && sale) sauver(); });
