@@ -342,6 +342,7 @@ function J(date){
   if (!S.jours[date]) S.jours[date] = {pr:[0,0,0,0,0], coran:0, salle:"", muscles:"", repas:{matin:0,midi:0,soir:0,collation:0,shaker:0},
     sommeil:"", eau:0, cig:null, humeur:0, colere:null, stress:null, maitre:0, patient:0, lache:"", taf:{t:"",ok:0}, bout:{t:"",ok:0}, maman:{t:"",ok:0},
     rep:"", libre:"", mercis:["","",""], victoire:"", demain:""};
+  if (!S.jours[date].tel) S.jours[date].tel = {contact:0, regard:0, chambre:0};   // « Maître de mon téléphone » (24/11/2026)
   return S.jours[date];
 }
 const peek = (date) => S.jours[date];
@@ -393,6 +394,7 @@ function semaineStats(l){
 
 /* =================== icones =================== */
 const IC = {
+  tel: '<rect x="7" y="2" width="10" height="20" rx="2.5"/><line x1="11" y1="18" x2="13" y2="18"/>',
   auj:'<circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5.3 5.3 7 7M17 17l1.7 1.7M5.3 18.7 7 17M17 7l1.7-1.7"/>',
   journal:'<path d="M4 5c2.6-1 5.4-1 8 1v13c-2.6-2-5.4-2-8-1zM20 5c-2.6-1-5.4-1-8 1v13c2.6-2 5.4-2 8-1z"/>',
   sos:'<path d="M12 21c-4 0-6.5-2.6-6.5-6.2 0-3.6 3-5.6 3.8-9.3 2.6 1.6 4 4 4 6 1-.6 1.7-1.7 1.9-3 1.9 1.7 3.3 3.8 3.3 6.3C18.5 18.4 16 21 12 21z"/>',
@@ -552,6 +554,9 @@ VUES.auj = () => {
       <div class="ligne"><span class="lib">Stress</span><input type="range" min="0" max="10" data-k="stress" data-num="1" data-live="strv" value="${j.stress ?? 0}" style="flex:1;accent-color:var(--am)"><span class="colv" id="strv" style="color:${(j.stress ?? 0) >= 7 ? "var(--rg)" : "inherit"}">${j.stress ?? "–"}</span></div>
       <div class="ligne">${tog("maitre", j.maitre, "Resté maître de moi", "vt")}${tog("patient", j.patient, "J'ai su attendre", "vt")}${tog("parole", j.parole, "Parole juste", "vt")}${tog("courage", j.courage, "Un pas de courage", "vt")}<button class="btn rg pt" data-nav="sos" style="margin-left:auto">SOS</button></div>
       <div class="ligne"><span class="lib">Respirer</span><div class="chips">${[1,2,3].map(n => `<button class="chip ${(j.respi || 0) >= n ? "on vt" : ""}" data-k="respi" data-v="${(j.respi || 0) === n ? n - 1 : n}" data-numv="1">${["matin","midi","soir"][n - 1]}</button>`).join("")}</div><button class="btn sec pt" data-act="respi-go" style="margin-left:auto">5 min</button></div></div>
+    <div class="carte"><h3>${ic("tel")} Maître de mon téléphone <small>c'est moi qui décide, pas les notifications</small></h3>
+      <div class="chips">${tog("tel.contact", j.tel.contact, "Aucun contact qui me tire en arrière", "vt")}${tog("tel.regard", j.tel.regard, "Pas regardé ce qui me fait du mal", "vt")}${tog("tel.chambre", j.tel.chambre, "Téléphone hors de la chambre la nuit", "vt")}</div>
+      <div class="sub" style="margin-top:10px">Série : <b style="color:var(--tx)">${serie(x => x && x.tel && x.tel.contact && x.tel.regard && x.tel.chambre)} jour(s)</b> avec les 3 cases. Astuce : coupe les notifications qui te dérangent et masque ce qui te tire en arrière — l'énergie va à tes projets.</div></div>
     <div class="carte"><h3>${ic("cible")} Mes missions</h3>
       ${[["taf", we ? "Détente" : "Taf", we ? "ce qui m'a fait du bien" : "ma priorité du jour"], ["bout", "Boutique", "mon action pour la boutique"], ["maman", "Maman", "ce que j'ai fait pour elle"]].map(([k, t, ph]) => `
         <div class="ligne"><span class="lib">${t}</span><input class="t" data-k="${k}.t" value="${esc(j[k].t)}" placeholder="${ph}" style="flex:1"><button class="case ${j[k].ok ? "on" : ""}" data-t="${k}.ok"></button></div>`).join("")}
@@ -1402,9 +1407,10 @@ function resumeTexte(){
   L.push(`- Défi 30 jours : jour ${I.n ?? "?"} / ${S.defi30 ? S.defi30.duree : 30}, série ${I.serie ?? 0}, ${I.tenus ?? 0} jour(s) tenu(s) ; rechutes notées : ${Object.entries((S.defi30 || {}).jours || {}).filter(([, v]) => v === -1).map(([d]) => d).join(", ") || "aucune"}`);
   L.push(`- Esprit clair : ${espritJours()} jour(s) (dernière rechute ${S.esprit.derniere}, record ${S.esprit.record || 0}, ${S.esprit.rechutes.length} rechute(s) notée(s), ${S.esprit.victoires || 0} envie(s) forte(s) vaincue(s))`);
   L.push(`- Sans cigarette d'affilée : ${serie(x => x && x.cig === 0)} j · journées propres d'affilée : ${serie(propre)} j`);
-  L.push("", "## Les 14 derniers jours", "", "| Date | Prières | Salle | Cig | Humeur | Stress | Colère | Maître | Attendre | Parole | Courage | Respi | Sommeil | Défi |", "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|");
+  L.push(`- Maître de mon téléphone (3 cases) : série ${serie(x => x && x.tel && x.tel.contact && x.tel.regard && x.tel.chambre)} j`);
+  L.push("", "## Les 14 derniers jours", "", "| Date | Prières | Salle | Cig | Humeur | Stress | Colère | Maître | Attendre | Parole | Courage | Respi | Sommeil | Défi | Tél |", "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|");
   for (const d of jours) { const j = peek(d); if (!j) continue;
-    L.push(`| ${d} | ${j.pr.filter(Boolean).length}/5 | ${j.salle || "·"} | ${j.cig ?? "?"} | ${j.humeur || "·"} | ${j.stress ?? "·"} | ${j.colere ?? "·"} | ${o(j.maitre)} | ${o(j.patient)} | ${o(j.parole)} | ${o(j.courage)} | ${j.respi || 0} | ${j.sommeil || "?"} | ${(S.defi30.jours || {})[d] === 1 ? "tenu" : (S.defi30.jours || {})[d] === -1 ? "rechute" : "·"} |`); }
+    L.push(`| ${d} | ${j.pr.filter(Boolean).length}/5 | ${j.salle || "·"} | ${j.cig ?? "?"} | ${j.humeur || "·"} | ${j.stress ?? "·"} | ${j.colere ?? "·"} | ${o(j.maitre)} | ${o(j.patient)} | ${o(j.parole)} | ${o(j.courage)} | ${j.respi || 0} | ${j.sommeil || "?"} | ${(S.defi30.jours || {})[d] === 1 ? "tenu" : (S.defi30.jours || {})[d] === -1 ? "rechute" : "·"} | ${j.tel ? (j.tel.contact ? 1 : 0) + (j.tel.regard ? 1 : 0) + (j.tel.chambre ? 1 : 0) + "/3" : "·"} |`); }
   L.push("", "### Ce qu'il a écrit, jour par jour");
   for (const d of jours) { const j = peek(d); if (!j) continue;
     const champs = [["Question", j.rep], ["Ressenti", j.libre], ["Victoire", j.victoire], ["Je lâche", j.lache], ["Demain", j.demain], ["Taf/détente", j.taf && j.taf.t], ["Boutique", j.bout && j.bout.t], ["Maman", j.maman && j.maman.t], ["Mercis", (j.mercis || []).filter(Boolean).join(" ; ")]].filter(([, v]) => c(v));
