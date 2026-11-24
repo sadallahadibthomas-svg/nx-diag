@@ -137,6 +137,8 @@ input[type=range]{width:100%;accent-color:var(--rg)}
 .gros.m{background:radial-gradient(120% 120% at 100% 0%,#ff9ec4,#b03a6e 55%,#3a0f24)}
 .gros.p{background:radial-gradient(120% 120% at 100% 0%,#8fe3d0,#2a8f7a 55%,#0d2e27)}
 .gros.a{background:radial-gradient(120% 120% at 100% 0%,#f3dc96,#a37d26 55%,#2e2309)}
+.gros.v{background:radial-gradient(120% 120% at 100% 0%,#a7f0b5,#2f8a4c 55%,#0c2a17)}
+.gros.n{background:radial-gradient(120% 120% at 100% 0%,#9fb0ff,#3b3f9a 55%,#11122e)}
 .sos2{grid-template-columns:1fr 1fr}
 .gros{min-height:130px}
 .journal{display:grid;grid-template-columns:300px 1fr;gap:14px;align-items:start}
@@ -324,7 +326,7 @@ function donneesInitiales(){
     journal:[{id:uid(), date:a, titre:"Ma première page", humeur:0, texte:C.premierePage.join("\n\n")}],
     geles:[], envies:[], coleres:[], seances:[], mesures:[], attente:[], soucis:[],
     defi30:{debut:"2026-11-17", duree:30, jours:{}},
-    social:{exag:[], defis:DEFIS_SOCIAUX.map(x => ({t:x, fait:0, avant:null, apres:null, date:""}))}, verites:[], manque:[], focus:{sessions:[], parking:[]},
+    social:{exag:[], defis:DEFIS_SOCIAUX.map(x => ({t:x, fait:0, avant:null, apres:null, date:""}))}, verites:[], manque:[], focus:{sessions:[], parking:[]}, tete:{moments:[]},
     esprit:{derniere:"2026-11-14", record:0, victoires:0, rechutes:[]},
     courses:["Gainer","Créatine","Lait","Bananes","Pâte d'arachide","Flocons d'avoine"].map(t => ({t, ok:0})),
     planning:C.semaineType.map(r => r.slice()),
@@ -394,6 +396,7 @@ function semaineStats(l){
 
 /* =================== icones =================== */
 const IC = {
+  tete: '<path d="M9.5 20v-3.2A7 7 0 1 1 18 11c0 1 .6 1.6 1.4 2.6l-1.4.6v2.3a1.5 1.5 0 0 1-1.5 1.5H15V20"/><path d="M8.5 10c1-1.3 2.4-1.3 3.4 0s2.4 1.3 3.4 0"/>',
   tel: '<rect x="7" y="2" width="10" height="20" rx="2.5"/><line x1="11" y1="18" x2="13" y2="18"/>',
   auj:'<circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5.3 5.3 7 7M17 17l1.7 1.7M5.3 18.7 7 17M17 7l1.7-1.7"/>',
   journal:'<path d="M4 5c2.6-1 5.4-1 8 1v13c-2.6-2-5.4-2-8-1zM20 5c-2.6-1-5.4-1-8 1v13c2.6-2 5.4-2 8-1z"/>',
@@ -497,7 +500,7 @@ async function verrouiller(){
 }
 
 /* =================== navigation =================== */
-const PAGES = [["auj","Aujourd'hui"],["journal","Journal"],["sos","SOS"],["focus","Focus"],["social","Moi & les autres"],["salle","Salle & corps"],["semaine","Ma semaine"],["maman","Maman"],["ennui","Anti-ennui"],["regl","Réglages"]];
+const PAGES = [["auj","Aujourd'hui"],["journal","Journal"],["sos","SOS"],["tete","Ma tête"],["focus","Focus"],["social","Moi & les autres"],["salle","Salle & corps"],["semaine","Ma semaine"],["maman","Maman"],["ennui","Anti-ennui"],["regl","Réglages"]];
 let PAGE = "auj", JOUR = null, ENTREE = null, LUNDI = null;
 function va(p){
   PAGE = p;
@@ -552,7 +555,7 @@ VUES.auj = () => {
       <div class="ligne"><span class="lib">Humeur</span><div class="faces">${FACES.map((f, i) => `<button class="${j.humeur === i+1 ? "on" : ""}" data-k="humeur" data-v="${i+1}" data-numv="1">${f}</button>`).join("")}</div></div>
       <div class="ligne"><span class="lib">Colère</span><input type="range" min="0" max="10" data-k="colere" data-num="1" data-live="colv" value="${j.colere ?? 0}" style="flex:1"><span class="colv" id="colv" style="color:${(j.colere ?? 0) >= 7 ? "var(--rg)" : "inherit"}">${j.colere ?? "–"}</span></div>
       <div class="ligne"><span class="lib">Stress</span><input type="range" min="0" max="10" data-k="stress" data-num="1" data-live="strv" value="${j.stress ?? 0}" style="flex:1;accent-color:var(--am)"><span class="colv" id="strv" style="color:${(j.stress ?? 0) >= 7 ? "var(--rg)" : "inherit"}">${j.stress ?? "–"}</span></div>
-      <div class="ligne">${tog("maitre", j.maitre, "Resté maître de moi", "vt")}${tog("patient", j.patient, "J'ai su attendre", "vt")}${tog("parole", j.parole, "Parole juste", "vt")}${tog("courage", j.courage, "Un pas de courage", "vt")}<button class="btn rg pt" data-nav="sos" style="margin-left:auto">SOS</button></div>
+      <div class="ligne">${tog("maitre", j.maitre, "Resté maître de moi", "vt")}${tog("patient", j.patient, "J'ai su attendre", "vt")}${tog("parole", j.parole, "Parole juste", "vt")}${tog("courage", j.courage, "Un pas de courage", "vt")}<button class="btn sec pt" data-nav="tete" style="margin-left:auto">Ma tête</button><button class="btn rg pt" data-nav="sos">SOS</button></div>
       <div class="ligne"><span class="lib">Respirer</span><div class="chips">${[1,2,3].map(n => `<button class="chip ${(j.respi || 0) >= n ? "on vt" : ""}" data-k="respi" data-v="${(j.respi || 0) === n ? n - 1 : n}" data-numv="1">${["matin","midi","soir"][n - 1]}</button>`).join("")}</div><button class="btn sec pt" data-act="respi-go" style="margin-left:auto">5 min</button></div></div>
     <div class="carte"><h3>${ic("tel")} Maître de mon téléphone <small>c'est moi qui décide, pas les notifications</small></h3>
       <div class="chips">${tog("tel.contact", j.tel.contact, "Aucun contact qui me tire en arrière", "vt")}${tog("tel.regard", j.tel.regard, "Pas regardé ce qui me fait du mal", "vt")}${tog("tel.chambre", j.tel.chambre, "Téléphone hors de la chambre la nuit", "vt")}</div>
@@ -565,11 +568,13 @@ VUES.auj = () => {
       <textarea class="t" data-k="rep" rows="3" placeholder="Ta réponse…">${esc(j.rep)}</textarea></div>
     <div class="carte large"><h3>${ic("journal")} Ce que je pense, ce que je ressens</h3>
       <textarea class="t" data-k="libre" rows="7" placeholder="Sans filtre. Personne d'autre ne lira ça.">${esc(j.libre)}</textarea></div>
-    <div class="carte"><h3>${ic("maman")} 3 mercis</h3>${[0,1,2].map(i => `<div class="ligne"><span class="lib" style="min-width:20px">${i+1}.</span><input class="t" data-k="mercis.${i}" value="${esc(j.mercis[i])}" style="flex:1"></div>`).join("")}</div>
-    <div class="carte"><h3>${ic("trophee")} Ma victoire · demain</h3>
-      <div class="ligne"><span class="lib">Victoire</span><input class="t" data-k="victoire" value="${esc(j.victoire)}" style="flex:1"></div>
-      <div class="ligne"><span class="lib">Je lâche…</span><input class="t" data-k="lache" value="${esc(j.lache || "")}" placeholder="une pensée, un remords, un souci" style="flex:1"></div>
-      <div class="ligne"><span class="lib">Demain, je…</span><input class="t" data-k="demain" value="${esc(j.demain)}" style="flex:1"></div></div>
+    <div class="carte"><h3>${ic("maman")} 3 mercis <small>le soir · 3 choses de ta journée qui méritent un merci</small></h3>${[0,1,2].map(i => `<div class="ligne"><span class="lib" style="min-width:20px">${i+1}.</span><input class="t" data-k="mercis.${i}" value="${esc(j.mercis[i])}" placeholder="${["une personne (ex. Maman m'a préparé à manger)", "un moment (ex. ma séance de salle)", "une petite chose (ex. un client reparti content)"][i]}" style="flex:1"></div>`).join("")}
+      <div class="sub" style="margin-top:8px">Le cerveau retient d'abord ce qui va mal : chercher 3 choses bien chaque soir l'entraîne à voir aussi le positif.</div></div>
+    <div class="carte"><h3>${ic("trophee")} Ma victoire · demain <small>le bilan du soir, 1 minute</small></h3>
+      <div class="ligne"><span class="lib">Victoire</span><input class="t" data-k="victoire" value="${esc(j.victoire)}" placeholder="ex. 2 cigarettes au lieu de 4" style="flex:1"></div>
+      <div class="ligne"><span class="lib">Je lâche…</span><input class="t" data-k="lache" value="${esc(j.lache || "")}" placeholder="ex. ce que les autres pensent de moi" style="flex:1"></div>
+      <div class="ligne"><span class="lib">Demain, je…</span><input class="t" data-k="demain" value="${esc(j.demain)}" placeholder="ex. appeler 2 clients à 10 h" style="flex:1"></div>
+      <div class="sub" style="margin-top:8px"><b>Victoire</b> : ce dont tu es fier, même petit. <b>Je lâche</b> : le poids que tu poses ce soir. <b>Demain</b> : UNE action précise. Une victoire pour finir fier, un poids posé pour dormir léger, une action précise pour démarrer demain. Évite « je ferai mieux » : trop vague pour être fait.</div></div>
   </div>`;
 };
 
@@ -625,7 +630,7 @@ VUES.sos = () => {
     <div class="carte"><h3>${ic("semaine")} Ma salle d'attente <small>Ce que je voulais tout de suite</small></h3><div class="liste">${S.attente.filter(a => a.etat === "attente").map(a => { const reste = a.cree + a.delai - now; return `<div class="it" style="flex-direction:column;align-items:flex-start">
       <div style="display:flex;width:100%;gap:8px"><b>${esc(a.t)}</b><span class="sub" style="margin-left:auto">${reste > 0 ? "encore " + (reste > 864e5 ? Math.ceil(reste / 864e5) + " j" : Math.ceil(reste / 36e5) + " h") : "délai passé"}</span></div>
       ${reste > 0 ? '<span class="sub">Patience. Ce qui est écrit pour toi ne t\'échappera pas.</span>' : `<div class="chips"><span class="sub">Toujours envie ?</span><button class="btn pt" data-att="fait" data-id="${a.id}">Oui, je le fais sereinement</button><button class="btn sec pt" data-att="abandon" data-id="${a.id}">Non, finalement</button></div>`}</div>`; }).join("") || '<div class="vide">Rien en attente.</div>'}</div></div>
-    <div class="carte"><h3>${ic("mental")} Ma boîte à soucis <small>Rendez-vous à ${esc(S.reglages.rdv || "20:00")}</small></h3><div class="liste">${S.soucis.filter(x => x.etat === "ouvert").map(x => `<div class="it" style="align-items:flex-start"><div style="flex:1"><b>${esc(x.t)}</b><div class="sub">${x.type === "moi" ? "Ça dépend de moi → " + esc(x.action || "") : "Confié à Allah"}</div></div><button class="btn sec pt" data-souci="1" data-id="${x.id}">Réglé ✓</button></div>`).join("") || '<div class="vide">Boîte vide. Tête libre.</div>'}</div></div>
+    <div class="carte"><h3>${ic("mental")} Ma boîte à soucis <small>Rendez-vous à ${esc(S.reglages.rdv || "20:00")}</small></h3><div class="liste">${S.soucis.filter(x => x.etat === "ouvert").map(x => `<div class="it" style="align-items:flex-start"><div style="flex:1"><b>${esc(x.t)}</b><div class="sub">${souciEtat(x)}</div></div><button class="btn sec pt" data-souci="1" data-id="${x.id}">Réglé ✓</button></div>`).join("") || '<div class="vide">Boîte vide. Tête libre.</div>'}</div></div>
   </div>
   <div class="carte" style="margin-top:14px"><h3>${ic("maman")} Mes vérités <small>À relire quand elle te manque · ${S.manque.length} vague(s) surmontée(s)</small></h3>
     <div class="liste">${S.verites.map((v, i) => `<div class="it">${esc(v)}<button class="x" data-act="verite-suppr" data-i="${i}">✕</button></div>`).join("") || '<div class="vide">Écris ce que tu sais au fond de toi.</div>'}</div>
@@ -779,6 +784,7 @@ document.addEventListener("change", (e) => {
   if (!OUVERT) return;
   if (e.target.dataset.j === "date") rendre();
   for (const k of ["colere", "stress"]) if (e.target.dataset.k === k && J(JOUR)[k] == null) { J(JOUR)[k] = +e.target.value; sauverBientot(); }
+  if (e.target.dataset.reg === "rdv") rendre();
   if (e.target.id === "import") importer(e.target.files[0]);
 });
 document.addEventListener("click", async (e) => {
@@ -862,7 +868,12 @@ const ACTIONS = {
   "defi-reset": () => { S.defi30 = {debut:auj(), duree:30, jours:{}}; sauverBientot(); rendre(); },
   "sos-stress": () => sosStress(0),
   "sos-attente": () => sosAttente(),
-  "sos-pardon": () => sosPardon()
+  "sos-pardon": () => sosPardon(),
+  "tete-noter": () => teteNoter(),
+  "tete-souffle": () => souffler(2),
+  "tete-nuit": () => teteNuit(1),
+  "tete-nuit-respi": () => respirerNuit(5),
+  "tete-rdv": () => teteRdv()
 };
 function telecharger(contenu, nom, type){ const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([contenu], {type})); a.download = nom; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); }
 async function importer(f){
@@ -886,7 +897,7 @@ let minuteurs = [];
 const stopMinuteurs = () => { minuteurs.forEach(clearTimeout); minuteurs.forEach(clearInterval); minuteurs = []; };
 function ouvreCalque(html){ $("#cbox").innerHTML = html; $("#calque").hidden = false; }
 function fermeCalque(){ stopMinuteurs(); ACTIF = false; if (VERROU_ECRAN) { VERROU_ECRAN.release().catch(() => {}); VERROU_ECRAN = null; }
-  $("#calque").hidden = true; $("#cbox").innerHTML = ""; if (OUVERT && ["sos", "focus", "social", "auj"].includes(PAGE)) rendre(); }
+  $("#calque").hidden = true; $("#cbox").innerHTML = ""; if (OUVERT && ["sos", "tete", "focus", "social", "auj"].includes(PAGE)) rendre(); }
 let SOS = {};
 function sosColere(etape){
   stopMinuteurs();
@@ -974,7 +985,7 @@ function sosStress(etape){
       <p class="sub">Mon stress maintenant :</p><input type="range" min="0" max="10" value="${Math.max(0, (SOS.avant || 7) - 2)}" id="sapres" style="max-width:360px;accent-color:var(--am)"><div class="colv" id="sap" style="text-align:center">${Math.max(0, (SOS.avant || 7) - 2)}</div>
       <div class="act"><button class="btn" id="fin">Fermer</button></div>`);
     $("#sapres").oninput = (e) => $("#sap").textContent = e.target.value;
-    $("#fin").onclick = () => { const j = J(auj()); const v = +$("#sapres").value; if (j.stress == null || v > j.stress) j.stress = v; sauverBientot(); fermeCalque(); toast("Pensée rangée. Tête plus légère."); };
+    $("#fin").onclick = () => { const j = J(auj()); const v = +$("#sapres").value; if (j.stress == null || v > j.stress) j.stress = v; noteMoment("sos", SOS.avant, v); sauverBientot(); fermeCalque(); toast("Pensée rangée. Tête plus légère."); };
   }
 }
 function defiInfos(){
@@ -1004,7 +1015,7 @@ function rdvBandeau(d){
   const n = S.soucis.filter(x => x.etat === "ouvert").length;
   const [h, m] = (S.reglages.rdv || "20:00").split(":").map(Number), now = new Date();
   if (!n || now.getHours() * 60 + now.getMinutes() < h * 60 + m) return "";
-  return `<div class="carte" style="border-color:rgba(156,195,234,.5);margin-bottom:14px;display:flex;align-items:center;gap:12px">⏰ <div style="flex:1"><b>C'est l'heure du rendez-vous des soucis.</b> <span class="sub">${n} pensée(s) dans ta boîte. 15 minutes, pas une de plus.</span></div><button class="btn pt" data-nav="sos">Ouvrir</button></div>`;
+  return `<div class="carte" style="border-color:rgba(156,195,234,.5);margin-bottom:14px;display:flex;align-items:center;gap:12px">⏰ <div style="flex:1"><b>C'est l'heure du rendez-vous des soucis.</b> <span class="sub">${n} pensée(s) dans ta boîte. 15 minutes pour trier, pas une de plus.</span></div><button class="btn pt" data-act="tete-rdv">Commencer</button><button class="btn sec pt" data-nav="tete">Voir</button></div>`;
 }
 
 /* =================== SOS : je le veux tout de suite =================== */
@@ -1238,13 +1249,185 @@ VUES.social = () => {
 };
 
 
+/* =================== Ma tete : stress & pensees (24/11/2026) ===================
+   Stress de fond et pensees en boucle : on ne chasse pas la pensee (ca la renforce), on la note, on la range
+   pour un rendez-vous fixe de 15 min ; le corps se calme par l'expiration longue ; le soir, on vide sa tete. */
+const OUTILS_TETE = {souffle:"Soupir apaisant", sos:"Ma tête tourne (pas-à-pas)", nuit:"Vider ma tête le soir"};
+function souciEtat(x){
+  return x.type === "moi" ? "Ça dépend de moi → " + esc(x.action || "action à préciser")
+    : x.type === "trier" ? "À trier au rendez-vous de " + esc(S.reglages.rdv || "20:00") : "Confié à Allah";
+}
+function noteMoment(outil, avant, apres){
+  if (!S.tete) S.tete = {moments:[]};
+  S.tete.moments.push({t:Date.now(), date:auj(), outil, avant, apres}); sauverBientot();
+}
+const curseurTete = (id, v) => `<input type="range" min="0" max="10" value="${v}" id="${id}" style="max-width:360px;accent-color:var(--am)" oninput="document.getElementById('${id}-v').textContent=this.value"><div class="colv" id="${id}-v" style="text-align:center">${v}</div>`;
+
+function teteNoter(){
+  stopMinuteurs();
+  const rdv = S.reglages.rdv || "20:00";
+  ouvreCalque(`<div class="th" style="color:#9cc3ea">10 secondes</div><h2>Je la note, je la range</h2>
+    <p>Pas besoin de la régler maintenant, ni de la chasser. Écris-la en quelques mots : elle a rendez-vous à <b>${esc(rdv)}</b>.</p>
+    <input class="t" id="tn" placeholder="Ex. : l'argent du loyer, le client de demain…" style="width:100%">
+    <div class="act"><button class="btn" id="tn-ok">Je la range pour ${esc(rdv)}</button><button class="btn sec" data-act="fermer">Annuler</button></div>`);
+  $("#tn").focus();
+  const go = () => { const t = $("#tn").value.trim(); if (!t) return toast("Écris-la en quelques mots.");
+    S.soucis.push({id:uid(), t, type:"trier", action:"", cree:Date.now(), etat:"ouvert"}); sauverBientot(); fermeCalque();
+    toast(`Rangée. Si elle revient : « Pas maintenant, à ${rdv}. »`); };
+  $("#tn-ok").onclick = go; $("#tn").onkeydown = (e) => { if (e.key === "Enter") go(); };
+}
+
+function souffler(min){
+  stopMinuteurs();
+  ouvreCalque(`<div class="th" style="color:#8fe3a0">Soupir apaisant · avant</div><h2>Mon stress maintenant</h2>${curseurTete("tav", 6)}
+    <div class="act"><button class="btn" id="tgo">Commencer · ${min >= 1 ? min + " min" : Math.round(min * 60) + " s"}</button><button class="btn sec" data-act="fermer">Annuler</button></div>`);
+  $("#tgo").onclick = () => {
+    const avant = +$("#tav").value, total = Math.round(min * 60), t0 = Date.now();
+    ACTIF = true; garderEcran();
+    ouvreCalque(`<div class="th" style="color:#8fe3a0">Soupir apaisant</div><h2>2 inspirations · 1 longue expiration</h2>
+      <div class="souffle" id="bulle"><b id="ph">Inspire</b></div><div class="sub" id="reste"></div>
+      <p class="sub">Inspire par le nez, puis encore un petit coup pour remplir à fond. Ensuite, souffle <b>lentement</b> par la bouche, jusqu'au bout. C'est l'expiration longue qui calme le cœur.</p>
+      <div class="act"><button class="btn sec" id="tfin">J'ai fini</button></div>`);
+    const PH = [["Inspire", 1900, .85], ["Encore un peu", 1000, 1], ["Expire… lentement", 5500, .5]]; let k = 0;
+    const etape = () => { const b = $("#bulle"); if (!b) return; const [t, d, s] = PH[k % 3]; b.style.transitionDuration = d + "ms"; b.style.transform = "scale(" + s + ")"; $("#ph").textContent = t; k++; minuteurs.push(setTimeout(etape, d)); };
+    minuteurs.push(setTimeout(etape, 60));
+    const fin = () => { stopMinuteurs();
+      ouvreCalque(`<div class="th" style="color:#8fe3a0">Soupir apaisant · après</div><h2>Et maintenant ?</h2><p class="sub">Mon stress après l'exercice :</p>${curseurTete("tap", Math.max(0, avant - 2))}
+        <div class="act"><button class="btn" id="tok">Noter</button></div>`);
+      $("#tok").onclick = () => { const apres = +$("#tap").value; noteMoment("souffle", avant, apres); fermeCalque();
+        toast(apres < avant ? `−${avant - apres} : ton corps t'a écouté. Retiens-le pour la prochaine fois.` : "C'est noté. Parfois il faut 2 tours : recommence plus tard, ou bouge 5 minutes."); }; };
+    minuteurs.push(setInterval(() => { const r = Math.max(0, total - Math.floor((Date.now() - t0) / 1000)); const e = $("#reste");
+      if (e) e.textContent = Math.floor(r / 60) + ":" + pad(r % 60); if (r === 0) fin(); }, 250));
+    $("#tfin").onclick = fin;
+  };
+}
+
+function teteRdv(i){
+  stopMinuteurs();
+  if (i === undefined) {
+    const L = S.soucis.filter(x => x.etat === "ouvert");
+    if (!L.length) return toast("Boîte vide : rien à trier ce soir. Tête libre.");
+    VUES.tete.rdv = {t0:Date.now(), ids:L.map(x => x.id), regle:0, action:0, confie:0}; i = 0;
+  }
+  const R = VUES.tete.rdv, n = R.ids.length, reste = 15 - Math.floor((Date.now() - R.t0) / 60000);
+  const x = S.soucis.find(y => y.id === R.ids[i]);
+  if (i >= n || reste <= 0 || !x) {
+    if (OUVERT && ["sos", "tete", "auj"].includes(PAGE)) rendre();
+    const attendent = n - i;
+    return ouvreCalque(`<div class="th" style="color:var(--vt)">Rendez-vous terminé</div><h2>Ta tête a fait son travail.</h2>
+      <p>${R.regle} réglée(s) ou passée(s) · ${R.action} avec une action prévue · ${R.confie} confiée(s) et lâchée(s)${attendent > 0 ? ` · ${attendent} attendront le prochain rendez-vous` : ""}.</p>
+      <p>Maintenant, passe à autre chose. Si une de ces pensées revient d'ici là : <b>« Pas maintenant, à ${esc(S.reglages.rdv || "20:00")}. »</b></p>
+      <div class="act"><button class="btn" data-act="fermer">Fermer</button></div>`);
+  }
+  ouvreCalque(`<div class="th" style="color:#9cc3ea">Rendez-vous des soucis · pensée ${i + 1} / ${n} · encore ${reste} min</div>
+    <h2 style="font-style:italic">« ${esc(x.t)} »</h2>${x.type === "moi" && x.action ? `<p class="sub">Action prévue : ${esc(x.action)}</p>` : ""}
+    <p>Est-ce que ça compte encore, ce soir ?</p>
+    <div class="act"><button class="btn sec" id="r-passe">Non : réglé ou passé</button><button class="btn" id="r-compte">Oui, ça compte</button></div><div id="r-suite"></div>`);
+  $("#r-passe").onclick = () => { x.etat = "regle"; R.regle++; sauverBientot(); teteRdv(i + 1); };
+  $("#r-compte").onclick = () => {
+    $("#r-suite").innerHTML = `<p><b>Ça dépend de moi ?</b></p><div class="act"><button class="btn" id="r-moi">Oui, je peux agir</button><button class="btn sec" id="r-pas">Non, ça ne dépend pas de moi</button></div><div id="r-fin"></div>`;
+    $("#r-moi").onclick = () => {
+      $("#r-fin").innerHTML = `<p>Ta <b>prochaine petite action</b>, avec un moment précis :</p><input class="t" id="r-act" value="${esc(x.action || "")}" placeholder="Ex. : appeler le fournisseur demain à 10 h" style="width:100%"><div class="act"><button class="btn" id="r-ok">C'est prévu</button></div>`;
+      $("#r-act").focus();
+      $("#r-ok").onclick = () => { const a = $("#r-act").value.trim(); if (!a) return toast("Une action précise, même petite."); x.type = "moi"; x.action = a; R.action++; sauverBientot(); teteRdv(i + 1); }; };
+    $("#r-pas").onclick = () => {
+      $("#r-fin").innerHTML = `<p style="font:400 24px/1.2 'Bebas Neue';letter-spacing:.04em;color:var(--or)">Hasbunallâhu wa ni'mal wakîl</p><p class="sub">Tu as fait ta part. Y penser encore ne changera rien ce soir.</p><div class="act"><button class="btn" id="r-lache">Je le confie et je le lâche</button></div>`;
+      $("#r-lache").onclick = () => { x.etat = "confie"; R.confie++; sauverBientot(); teteRdv(i + 1); }; };
+  };
+}
+
+function teteNuit(etape){
+  stopMinuteurs(); const j = J(auj());
+  if (etape === 1) {
+    ouvreCalque(`<div class="th" style="color:#9fb0ff">Avant de dormir · 1 / 3</div><h2>Vide ta tête</h2>
+      <p>Écris <b>tout</b> ce qui tourne, en vrac : choses à faire, inquiétudes, idées. Pas de phrases, pas de tri. Une fois écrit, ta tête n'a plus besoin de le retenir pour toi.</p>
+      <textarea class="t" id="vid" style="min-height:150px" placeholder="- appeler le fournisseur&#10;- le loyer&#10;- …">${esc(j.vidage || "")}</textarea>
+      <div class="act"><button class="btn" id="v1">C'est sorti</button><button class="btn sec" data-act="fermer">Plus tard</button></div>`);
+    $("#vid").focus();
+    $("#v1").onclick = () => { j.vidage = $("#vid").value; sauverBientot(); teteNuit(2); };
+  } else if (etape === 2) {
+    ouvreCalque(`<div class="th" style="color:#9fb0ff">Avant de dormir · 2 / 3</div><h2>Demain, je commence par…</h2>
+      <p>UNE chose précise, la première de ta journée. Le reste attendra son tour.</p>
+      <input class="t" id="v-dem" value="${esc(j.demain || "")}" placeholder="Ex. : appeler 2 clients à 10 h" style="width:100%">
+      <div class="act"><button class="btn" id="v2">C'est décidé</button></div>`);
+    $("#v-dem").focus();
+    $("#v2").onclick = () => { const v = $("#v-dem").value.trim(); if (v) j.demain = v; sauverBientot(); teteNuit(3); };
+  } else {
+    j.vide = 1; sauverBientot();
+    ouvreCalque(`<div class="th" style="color:var(--vt)">Avant de dormir · 3 / 3</div><h2>C'est noté. Tu peux poser.</h2>
+      <p>Tout est écrit, ça t'attend demain. Cette nuit, si une pensée revient, dis-lui simplement : <b>« C'est noté. Demain. »</b></p>
+      <div class="act"><button class="btn" data-act="tete-nuit-respi">Respirer pour m'endormir · 5 min</button><button class="btn sec" data-act="fermer">Bonne nuit</button></div>`);
+  }
+}
+
+function respirerNuit(min){
+  stopMinuteurs(); ACTIF = true; garderEcran();
+  const total = Math.round(min * 60), t0 = Date.now(); let ins = true;
+  ouvreCalque(`<div class="th" style="color:#9fb0ff">Pour s'endormir</div><h2>Inspire 4 s · Expire 6 s</h2>
+    <div class="souffle" id="bulle" style="filter:brightness(.7)"><b id="ph">Inspire</b></div><div class="sub" id="reste"></div>
+    <p class="sub">Baisse la luminosité. Quand c'est fini, pose le téléphone hors de la chambre et continue sans écran : inspire en comptant jusqu'à 4, expire jusqu'à 6. Expirer plus longtemps qu'on inspire ralentit le cœur.</p>
+    <div class="act"><button class="btn sec" id="stop">Arrêter</button></div>`);
+  const phase = () => { const b = $("#bulle"); if (!b) return; const d = ins ? 4000 : 6000; b.style.transitionDuration = d + "ms"; b.style.transform = ins ? "scale(1)" : "scale(.55)"; $("#ph").textContent = ins ? "Inspire" : "Expire"; ins = !ins; minuteurs.push(setTimeout(phase, d)); };
+  minuteurs.push(setTimeout(phase, 60));
+  minuteurs.push(setInterval(() => { const r = Math.max(0, total - Math.floor((Date.now() - t0) / 1000)); const e = $("#reste"); if (e) e.textContent = Math.floor(r / 60) + ":" + pad(r % 60);
+    if (r === 0) { stopMinuteurs(); ouvreCalque(`<h2>Bonne nuit.</h2><p>Ta tête est vidée, ton corps a ralenti. Si une pensée revient : « C'est noté. Demain. »</p><div class="act"><button class="btn" data-act="fermer">Fermer</button></div>`); } }, 500));
+  $("#stop").onclick = () => fermeCalque();
+}
+
+VUES.tete = () => {
+  const a = auj(), j = peek(a) || {}, M = (S.tete && S.tete.moments) || [];
+  const mes = M.filter(m => m.date >= plus(a, -6) && m.avant != null && m.apres != null);
+  const baisse = mes.length ? (mes.reduce((s, m) => s + (m.avant - m.apres), 0) / mes.length) : null;
+  const ouverts = S.soucis.filter(x => x.etat === "ouvert"), rdv = S.reglages.rdv || "20:00";
+  const chiffres = M.filter(m => m.avant != null && m.apres != null).slice(-8).reverse();
+  return `<div class="entete"><div><div class="k" style="color:#9cc3ea">STRESS & PENSÉES</div><h1>Ma <em>tête</em></h1></div></div>
+  <div class="stats">
+    <div class="stat"><div class="v">${j.stress ?? "–"}<small> / 10</small></div><div class="l">Mon stress aujourd'hui</div></div>
+    <div class="stat vt"><div class="v">${mes.filter(m => m.apres < m.avant).length}</div><div class="l">Moments calmés · 7 jours</div></div>
+    <div class="stat cy"><div class="v">${baisse == null ? "–" : (baisse > 0 ? "−" : "") + Math.abs(baisse).toFixed(1)}</div><div class="l">Baisse moyenne du stress</div></div>
+    <div class="stat or"><div class="v">${ouverts.length}</div><div class="l">Pensées rangées · RDV ${esc(rdv)}</div></div>
+  </div>
+  <div class="carte" style="margin-bottom:14px"><div class="cit">« Une pensée utile finit par une action. Sinon : je la note, je la range, et je reviens à ce que je fais. »<b>Ma règle de poche</b></div></div>
+  <div class="sos2">
+    <button class="gros t" data-act="tete-noter"><b>Ça tourne dans ma tête</b><span>10 secondes : je note la pensée en quelques mots et je la range pour ${esc(rdv)}. Je ne la chasse pas.</span></button>
+    <button class="gros v" data-act="tete-souffle"><b>Mon corps est tendu</b><span>2 minutes : deux inspirations, une longue expiration. Le corps se calme d'abord, la tête suit.</span></button>
+    <button class="gros p" data-act="sos-stress"><b>Je n'arrive pas à décrocher</b><span>Le pas-à-pas complet : nommer la pensée, revenir ici, trier, ranger.</span></button>
+    <button class="gros n" data-act="tete-nuit"><b>Avant de dormir</b><span>5 minutes pour tout écrire en vrac, choisir par quoi je commence demain, puis respirer pour m'endormir.</span></button>
+  </div>
+  <div class="grille">
+    <div class="carte large"><h3>${ic("mental")} Le rendez-vous des soucis <small>15 minutes par jour, pas une de plus</small></h3>
+      <p class="sub">Toute la journée, quand une pensée tourne : tu la ranges (bouton bleu). À l'heure du rendez-vous, tu les tries une par une : réglée, une action prévue, ou confiée et lâchée. C'est une méthode utilisée par les psychologues contre l'inquiétude permanente : la tête accepte d'attendre quand elle sait que son tour viendra.</p>
+      <div class="ligne"><span class="lib">Mon heure</span><input class="t" type="time" data-reg="rdv" value="${esc(rdv)}" style="width:130px"><button class="btn" data-act="tete-rdv" style="margin-left:auto" ${ouverts.length ? "" : "disabled"}>Commencer le rendez-vous</button></div>
+      <div class="liste" style="margin-top:8px">${ouverts.map(x => `<div class="it" style="align-items:flex-start"><div style="flex:1"><b>${esc(x.t)}</b><div class="sub">${souciEtat(x)}</div></div><button class="btn sec pt" data-souci="1" data-id="${x.id}">Réglé ✓</button></div>`).join("") || '<div class="vide">Boîte vide. Tête libre.</div>'}</div></div>
+    <div class="carte"><h3>${ic("foi")} La nuit, si ça tourne</h3>
+      <div class="ligne">${j.vide ? '<span class="propre ok">✓ TÊTE VIDÉE CE SOIR</span>' : ""}<button class="btn pt" data-act="tete-nuit" style="margin-left:auto">Vider ma tête</button></div>
+      <ol style="margin:8px 0 0;padding-left:20px;line-height:1.55">
+        <li><b>Le cœur palpite ?</b> Le plus souvent, c'est l'alarme du stress (l'adrénaline). Pose une main sur la poitrine et expire lentement, plusieurs fois : ça redescend en quelques minutes.</li>
+        <li><b>Ne prends pas le téléphone</b> : la lumière et les notifications réveillent encore plus.</li>
+        <li><b>Note la pensée en 3 mots</b> sur un papier près du lit, et dis-lui : « C'est noté. Demain. »</li>
+        <li><b>Respire</b> : inspire en comptant jusqu'à 4, expire jusqu'à 6, plusieurs fois.</li>
+        <li><b>Toujours réveillé au bout de 20 minutes environ ?</b> Lève-toi, lumière douce, quelque chose de calme (lecture, dhikr), et recouche-toi quand le sommeil revient.</li></ol></div>
+    <div class="carte"><h3>${ic("trophee")} Ce qui marche pour moi <small>stress avant → après</small></h3>
+      <div class="liste">${chiffres.map(m => `<div class="it"><span class="sub" style="min-width:60px">${courte(m.date)}</span>${esc(OUTILS_TETE[m.outil] || m.outil)}<span style="margin-left:auto;font-weight:700;color:${m.apres < m.avant ? "var(--vt)" : "var(--mu)"}">${m.avant} → ${m.apres}</span></div>`).join("") || '<div class="vide">Fais un premier exercice : tu verras ici, en chiffres, ce qui te calme vraiment.</div>'}</div>
+      <div class="ligne" style="margin-top:8px"><span class="sub">Aussi :</span><button class="btn sec pt" data-act="respi-go">Cohérence cardiaque · 5 min</button></div></div>
+    <div class="carte large"><h3>${ic("mental")} Comprendre : pourquoi je n'arrive pas à arrêter de penser</h3>
+      <ol style="margin:6px 0 0;padding-left:20px;line-height:1.6">
+        <li><b>Plus tu chasses une pensée, plus elle revient.</b> Essaie de ne pas penser à un ours blanc… tu y penses. C'est pour ça que « me vider la tête » de force ne marche pas. On ne lutte pas : on la <b>note</b>, on la <b>range</b>, on revient à ce qu'on fait.</li>
+        <li><b>Réfléchir ou ruminer ?</b> Le test : « Est-ce que cette pensée me mène à une action dans les 10 prochaines minutes ? » Oui → fais l'action. Non → c'est de la rumination : range-la pour ${esc(rdv)}.</li>
+        <li><b>Le stress est une alarme du corps.</b> On la baisse par le corps d'abord : une longue expiration, bouger (20 pompes, 5 minutes de marche), boire de l'eau. Ensuite seulement, on réfléchit.</li>
+        <li><b>La cigarette entretient l'alarme.</b> Elle donne l'impression de calmer, mais le manque de nicotine entre deux cigarettes fabrique lui-même du stress. En fumant moins, le stress de fond baisse au bout de quelques semaines.</li>
+        <li><b>Le sommeil et le café comptent.</b> Moins de 6 h de sommeil, café ou boisson énergisante après 16 h, écran au lit : le lendemain, l'alarme se déclenche plus vite.</li>
+        <li><b>Quand en parler à un médecin.</b> Si le stress est là presque tous les jours depuis plusieurs semaines, ou s'il t'empêche de dormir, de manger ou de travailler, parles-en à un médecin ou à un psychologue. Ce n'est pas une faiblesse : ça se soigne très bien, et ces outils marchent encore mieux avec un accompagnement. <b>Sans attendre</b> si le cœur palpite sans raison, longtemps ou de façon irrégulière, ou avec une douleur dans la poitrine, un essoufflement ou un malaise (urgence s'il y a douleur ou malaise).</li></ol></div>
+  </div>`;
+};
+
 /* =================== Synchronisation PC <-> telephone ===================
    Le coffre CHIFFRE (illisible sans le code) est depose dans un depot GitHub prive.
    Chaque appareil : a l'ouverture il recupere et fusionne, apres chaque enregistrement il renvoie. */
 const NX_API = (() => { try { return localStorage.getItem("nx-api") || "https://api.github.com"; } catch (e) { return "https://api.github.com"; } })();
 let SYNC_CFG = null, SYNC_EN_COURS = false, ETAT_SYNC = "", tPousse = null, EMPREINTES = null;
 const LISTES_ID = [["journal"], ["geles"], ["attente"], ["soucis"], ["seances"], ["social", "exag"]];
-const EVENEMENTS = [["envies"], ["coleres"], ["manque"], ["mesures"], ["focus", "sessions"], ["esprit", "rechutes"]];
+const EVENEMENTS = [["envies"], ["coleres"], ["manque"], ["mesures"], ["focus", "sessions"], ["esprit", "rechutes"], ["tete", "moments"]];
 const prendre = (o, p) => p.reduce((x, k) => (x == null ? undefined : x[k]), o);
 const poser = (o, p, v) => { let x = o; for (let i = 0; i < p.length - 1; i++) x = x[p[i]] = x[p[i]] || {}; x[p[p.length - 1]] = v; };
 const copie = (v) => v === undefined ? undefined : JSON.parse(JSON.stringify(v));
@@ -1413,7 +1596,7 @@ function resumeTexte(){
     L.push(`| ${d} | ${j.pr.filter(Boolean).length}/5 | ${j.salle || "·"} | ${j.cig ?? "?"} | ${j.humeur || "·"} | ${j.stress ?? "·"} | ${j.colere ?? "·"} | ${o(j.maitre)} | ${o(j.patient)} | ${o(j.parole)} | ${o(j.courage)} | ${j.respi || 0} | ${j.sommeil || "?"} | ${(S.defi30.jours || {})[d] === 1 ? "tenu" : (S.defi30.jours || {})[d] === -1 ? "rechute" : "·"} | ${j.tel ? (j.tel.contact ? 1 : 0) + (j.tel.regard ? 1 : 0) + (j.tel.chambre ? 1 : 0) + "/3" : "·"} |`); }
   L.push("", "### Ce qu'il a écrit, jour par jour");
   for (const d of jours) { const j = peek(d); if (!j) continue;
-    const champs = [["Question", j.rep], ["Ressenti", j.libre], ["Victoire", j.victoire], ["Je lâche", j.lache], ["Demain", j.demain], ["Taf/détente", j.taf && j.taf.t], ["Boutique", j.bout && j.bout.t], ["Maman", j.maman && j.maman.t], ["Mercis", (j.mercis || []).filter(Boolean).join(" ; ")]].filter(([, v]) => c(v));
+    const champs = [["Question", j.rep], ["Ressenti", j.libre], ["Victoire", j.victoire], ["Je lâche", j.lache], ["Demain", j.demain], ["Taf/détente", j.taf && j.taf.t], ["Boutique", j.bout && j.bout.t], ["Maman", j.maman && j.maman.t], ["Mercis", (j.mercis || []).filter(Boolean).join(" ; ")], ["Vidé le soir", j.vidage]].filter(([, v]) => c(v));
     if (champs.length) L.push(`- **${d}** — ` + champs.map(([k, v]) => `${k} : ${c(v, 600)}`).join(" / ")); }
   L.push("", "## Journal (14 derniers jours)");
   for (const e of S.journal.filter(e => e.date >= jours[13]).sort((x, y) => x.date.localeCompare(y.date))) L.push(`### ${e.date} — ${e.titre || "sans titre"}`, c(e.texte, 1800), "");
@@ -1428,6 +1611,8 @@ function resumeTexte(){
   L.push(`- Exagérations notées : ${S.social.exag.filter(x => x.date >= jours[13]).map(x => `« ${c(x.dit, 120)} » → vérité « ${c(x.vrai, 120)} » (${x.corrige})`).join(" | ") || "aucune"}`);
   L.push(`- Échelle du courage : ${S.social.defis.filter(x => x.fait).map(x => `${c(x.t, 80)} (${x.date}, peur ${x.avant}→${x.apres})`).join(" | ") || "aucun défi fait"}`);
   L.push(`- Focus : ${S.focus.sessions.filter(s => s.date >= jours[6]).reduce((s, x) => s + x.minutes, 0)} min sur 7 jours ; pensées garées : ${S.focus.parking.map(p => c(p.t, 80)).join(" | ") || "aucune"}`);
+  const M14 = ((S.tete || {}).moments || []).filter(m => m.t > t14 && m.avant != null);
+  L.push(`- Ma tête (stress, avant→après) : ${M14.map(m => `${m.date} ${OUTILS_TETE[m.outil] || m.outil} ${m.avant ?? "?"}→${m.apres ?? "?"}`).join(" | ") || "aucun exercice noté"} ; vidages du soir : ${jours.filter(d => (peek(d) || {}).vide).join(", ") || "aucun"}`);
   L.push("", "## Ses vérités", ...(S.verites.length ? S.verites.map(v => "- " + c(v, 200)) : ["- (aucune)"]));
   const l = lundi(a), b = S.semaines[l] || S.semaines[plus(l, -7)];
   if (b) L.push("", "## Bilan de semaine", ...Object.entries(b).filter(([, v]) => c(v)).map(([k, v]) => `- ${k} : ${c(v, 400)}`));

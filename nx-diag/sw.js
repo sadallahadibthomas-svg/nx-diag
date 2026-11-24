@@ -1,5 +1,5 @@
 // NX Diagnostic - mise en cache pour fonctionner sans internet
-const V = "nx-20261124-114446";
+const V = "nx-20261124-205325";
 const FICHIERS = ["./", "index.html", "contenu.js", "manifest.webmanifest", "icone-192.png", "icone-512.png", "icone-maskable-512.png", "polices/Barlow-400-latin-ext.woff2", "polices/Barlow-400-latin.woff2", "polices/Barlow-500-latin-ext.woff2", "polices/Barlow-500-latin.woff2", "polices/Barlow-600-latin-ext.woff2", "polices/Barlow-600-latin.woff2", "polices/Barlow-700-latin-ext.woff2", "polices/Barlow-700-latin.woff2", "polices/Barlow-800-latin-ext.woff2", "polices/Barlow-800-latin.woff2", "polices/BarlowCondensed-500-latin-ext.woff2", "polices/BarlowCondensed-500-latin.woff2", "polices/BarlowCondensed-600-latin-ext.woff2", "polices/BarlowCondensed-600-latin.woff2", "polices/BarlowCondensed-700-latin-ext.woff2", "polices/BarlowCondensed-700-latin.woff2", "polices/BebasNeue-400-latin-ext.woff2", "polices/BebasNeue-400-latin.woff2", "polices/Caveat-500-latin-ext.woff2", "polices/Caveat-500-latin.woff2", "polices/Caveat-700-latin-ext.woff2", "polices/Caveat-700-latin.woff2", "polices/polices.css"];
 // fichier par fichier (un fichier manquant ne bloque pas l'installation)
 self.addEventListener("install", (e) => {
