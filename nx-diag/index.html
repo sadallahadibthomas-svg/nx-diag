@@ -321,12 +321,12 @@ function donneesInitiales(){
   const a = auj();
   return {
     v:1, cree:new Date().toISOString(),
-    reglages:{debut:lundi(a), verrou:5, contact:"", prixCig:100, rdv:"20:00"},
+    reglages:{debut:lundi(a), verrou:5, contact:"", prixCig:100, rdv:"20:00", arretCig:"2026-11-26", avantCig:3},
     jours:{},
     journal:[{id:uid(), date:a, titre:"Ma première page", humeur:0, texte:C.premierePage.join("\n\n")}],
     geles:[], envies:[], coleres:[], seances:[], mesures:[], attente:[], soucis:[],
     defi30:{debut:"2026-11-17", duree:30, jours:{}},
-    social:{exag:[], defis:DEFIS_SOCIAUX.map(x => ({t:x, fait:0, avant:null, apres:null, date:""}))}, verites:[], manque:[], focus:{sessions:[], parking:[]}, tete:{moments:[]},
+    social:{exag:[], defis:DEFIS_SOCIAUX.map(x => ({t:x, fait:0, avant:null, apres:null, date:""}))}, verites:[], manque:[], focus:{sessions:[], parking:[]}, tete:{moments:[]}, tabac:TABAC_DEFAUT(),
     esprit:{derniere:"2026-11-14", record:0, victoires:0, rechutes:[]},
     courses:["Gainer","Créatine","Lait","Bananes","Pâte d'arachide","Flocons d'avoine"].map(t => ({t, ok:0})),
     planning:C.semaineType.map(r => r.slice()),
@@ -334,6 +334,15 @@ function donneesInitiales(){
     maman:{idees:C.maman.map(t => ({t, ok:0})), dates:[]},
     ennui:C.antiEnnui.flatMap(([c, l]) => l.map(t => ({c, t})))
   };
+}
+function TABAC_DEFAUT(){
+  return {raisons:["Mon équilibre : une tête plus calme, moins d'anxiété et de stress", "Mon cœur et mes nuits : un meilleur sommeil",
+                   "Mon souffle à la salle", "Mon argent", "Tenir la promesse que je me fais à moi-même"],
+    risques:[{t:"Après manger", p:"Je me lève de table, un grand verre d'eau, je me brosse les dents ou je marche 5 minutes."},
+             {t:"Stress, pensées qui tournent", p:"« Ma tête tourne » ou le soupir apaisant : le corps d'abord, la tête suit."},
+             {t:"Le soir, seul", p:"Je vide ma tête (page Ma tête), ablutions, dhikr, au lit sans téléphone."},
+             {t:"Avec des amis qui fument", p:"Je dis « j'ai arrêté ». Jamais « juste une ». Je m'éloigne quelques minutes."},
+             {t:"Quand quelqu'un me manque", p:"Le bouton SOS : une action à la place. Ni cigarette, ni message."}]};
 }
 function completer(){
   const base = donneesInitiales();
@@ -396,6 +405,7 @@ function semaineStats(l){
 
 /* =================== icones =================== */
 const IC = {
+  tabac: '<rect x="2.5" y="12.5" width="14" height="4" rx="1"/><path d="M19 12.5v4M21.5 12.5v4M17 8c0-1.5 1.5-1.5 1.5-3S17 3 17 3M3 3l18 18"/>',
   tete: '<path d="M9.5 20v-3.2A7 7 0 1 1 18 11c0 1 .6 1.6 1.4 2.6l-1.4.6v2.3a1.5 1.5 0 0 1-1.5 1.5H15V20"/><path d="M8.5 10c1-1.3 2.4-1.3 3.4 0s2.4 1.3 3.4 0"/>',
   tel: '<rect x="7" y="2" width="10" height="20" rx="2.5"/><line x1="11" y1="18" x2="13" y2="18"/>',
   auj:'<circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5.3 5.3 7 7M17 17l1.7 1.7M5.3 18.7 7 17M17 7l1.7-1.7"/>',
@@ -500,7 +510,7 @@ async function verrouiller(){
 }
 
 /* =================== navigation =================== */
-const PAGES = [["auj","Aujourd'hui"],["journal","Journal"],["sos","SOS"],["tete","Ma tête"],["focus","Focus"],["social","Moi & les autres"],["salle","Salle & corps"],["semaine","Ma semaine"],["maman","Maman"],["ennui","Anti-ennui"],["regl","Réglages"]];
+const PAGES = [["auj","Aujourd'hui"],["journal","Journal"],["sos","SOS"],["tete","Ma tête"],["tabac","Arrêter de fumer"],["focus","Focus"],["social","Moi & les autres"],["salle","Salle & corps"],["semaine","Ma semaine"],["maman","Maman"],["ennui","Anti-ennui"],["regl","Réglages"]];
 let PAGE = "auj", JOUR = null, ENTREE = null, LUNDI = null;
 function va(p){
   PAGE = p;
@@ -532,7 +542,7 @@ VUES.auj = () => {
     <div class="droite"><div class="nav-date"><button data-act="jour-" title="Jour précédent">◀</button><div class="d">${longue(d)}</div><button data-act="jour+" title="Jour suivant">▶</button></div>
     ${d !== auj() ? '<button class="btn sec pt" data-act="jour0">Aujourd\'hui</button>' : ""}
     <span class="propre ${propre(j) ? "ok" : ""}">${propre(j) ? "✓ JOURNÉE PROPRE" : "JOURNÉE EN COURS"}</span></div></div>
-  ${defiBandeau(d)}${rdvBandeau(d)}
+  ${defiBandeau(d)}${rdvBandeau(d)}${tabacBandeau(d)}
   <div class="stats">
     <div class="stat or"><div class="v">${prS}<small> j</small></div><div class="l">Journées propres d'affilée</div></div>
     <div class="stat vt"><div class="v">${cigS}<small> j</small></div><div class="l">Sans cigarette</div></div>
@@ -547,6 +557,7 @@ VUES.auj = () => {
       <div class="ligne"><span class="lib">Salle</span><div class="chips">${opt("salle","faite","Séance faite","vt")}${opt("salle","ratee","Ratée","rg")}${opt("salle","repos","Repos")}${opt("salle","rattrapage","Rattrapage","vt")}</div></div>
       <div class="ligne"><span class="lib">Muscles</span><input class="t" data-k="muscles" value="${esc(j.muscles)}" placeholder="pecs, dos, jambes…" style="flex:1"></div>
       <div class="ligne"><span class="lib">Repas</span><div class="chips">${["matin","midi","soir","collation","shaker"].map(r => tog("repas." + r, j.repas[r], r)).join("")}</div></div>
+      <div class="ligne"><span class="lib">Énergie</span><div class="chips">${[["1","1 · KO"],["2","2"],["3","3"],["4","4"],["5","5 · en forme"]].map(([v, t]) => opt("energie", v, t, +v >= 4 ? "vt" : +v <= 2 ? "rg" : "")).join("")}</div><span class="sub" style="margin-left:8px">au taf, aujourd'hui</span></div>
       <div class="ligne"><span class="lib">Sommeil</span><input class="t n" type="number" min="0" max="16" step=".5" data-k="sommeil" data-num="1" value="${esc(j.sommeil)}"> h
         <span class="lib" style="margin-left:14px;min-width:0">Eau</span><div class="eau">${[1,2,3,4,5,6,7,8].map(i => `<button data-k="eau" data-v="${j.eau === i ? i-1 : i}" data-numv="1">${goutte(i <= j.eau)}</button>`).join("")}</div></div>
       <div class="ligne"><span class="lib">Cigarettes</span><button class="chip" data-act="cig-">−</button><span class="colv" style="min-width:30px;text-align:center">${j.cig == null ? "?" : j.cig}</span><button class="chip" data-act="cig+">+</button>
@@ -555,6 +566,7 @@ VUES.auj = () => {
       <div class="ligne"><span class="lib">Humeur</span><div class="faces">${FACES.map((f, i) => `<button class="${j.humeur === i+1 ? "on" : ""}" data-k="humeur" data-v="${i+1}" data-numv="1">${f}</button>`).join("")}</div></div>
       <div class="ligne"><span class="lib">Colère</span><input type="range" min="0" max="10" data-k="colere" data-num="1" data-live="colv" value="${j.colere ?? 0}" style="flex:1"><span class="colv" id="colv" style="color:${(j.colere ?? 0) >= 7 ? "var(--rg)" : "inherit"}">${j.colere ?? "–"}</span></div>
       <div class="ligne"><span class="lib">Stress</span><input type="range" min="0" max="10" data-k="stress" data-num="1" data-live="strv" value="${j.stress ?? 0}" style="flex:1;accent-color:var(--am)"><span class="colv" id="strv" style="color:${(j.stress ?? 0) >= 7 ? "var(--rg)" : "inherit"}">${j.stress ?? "–"}</span></div>
+      <div class="sub" style="margin:-2px 0 8px">Colère et stress : <b>0 = calme</b>, <b>10 = au maximum</b> (explosé, débordé). Si tu étais calme, laisse à 0.</div>
       <div class="ligne">${tog("maitre", j.maitre, "Resté maître de moi", "vt")}${tog("patient", j.patient, "J'ai su attendre", "vt")}${tog("parole", j.parole, "Parole juste", "vt")}${tog("courage", j.courage, "Un pas de courage", "vt")}<button class="btn sec pt" data-nav="tete" style="margin-left:auto">Ma tête</button><button class="btn rg pt" data-nav="sos">SOS</button></div>
       <div class="ligne"><span class="lib">Respirer</span><div class="chips">${[1,2,3].map(n => `<button class="chip ${(j.respi || 0) >= n ? "on vt" : ""}" data-k="respi" data-v="${(j.respi || 0) === n ? n - 1 : n}" data-numv="1">${["matin","midi","soir"][n - 1]}</button>`).join("")}</div><button class="btn sec pt" data-act="respi-go" style="margin-left:auto">5 min</button></div></div>
     <div class="carte"><h3>${ic("tel")} Maître de mon téléphone <small>c'est moi qui décide, pas les notifications</small></h3>
@@ -784,7 +796,7 @@ document.addEventListener("change", (e) => {
   if (!OUVERT) return;
   if (e.target.dataset.j === "date") rendre();
   for (const k of ["colere", "stress"]) if (e.target.dataset.k === k && J(JOUR)[k] == null) { J(JOUR)[k] = +e.target.value; sauverBientot(); }
-  if (e.target.dataset.reg === "rdv") rendre();
+  if (["rdv", "arretCig", "avantCig", "prixCig"].includes(e.target.dataset.reg)) rendre();
   if (e.target.id === "import") importer(e.target.files[0]);
 });
 document.addEventListener("click", async (e) => {
@@ -873,7 +885,14 @@ const ACTIONS = {
   "tete-souffle": () => souffler(2),
   "tete-nuit": () => teteNuit(1),
   "tete-nuit-respi": () => respirerNuit(5),
-  "tete-rdv": () => teteRdv()
+  "tete-rdv": () => teteRdv(),
+  "tabac-zero": () => { const j = J(auj()); if (j.cig && !confirm("Tu as noté " + j.cig + " cigarette(s) aujourd'hui. Remettre à zéro ?")) return; j.cig = 0; sauverBientot(); rendre(); toast("Journée sans cigarette notée. 💪"); },
+  "tabac-une": () => { S.envies.push({t:Date.now(), res:"craque"}); const j = J(auj()); j.cig = (j.cig || 0) + 1; sauverBientot();
+    ouvreCalque(`<h2>Ce n'est pas un échec.</h2><p>Une cigarette n'efface pas tes jours gagnés. Pose-toi une seule question : <b>qu'est-ce qui l'a déclenchée ?</b> (un moment, une personne, une pensée). Ajoute-le dans « Mes moments à risque » avec ta parade, et la prochaine envie, tu la tiens.</p><div class="act"><button class="btn" data-act="fermer">Je reprends tout de suite</button></div>`); },
+  "tabac-raison": () => { const e = $("#tb-raison"), v = (e.value || "").trim(); if (!v) return; if (!S.tabac) S.tabac = TABAC_DEFAUT(); S.tabac.raisons.push(v); sauverBientot(); rendre(); },
+  "tabac-raison-x": (b) => { S.tabac.raisons.splice(+b.dataset.i, 1); sauverBientot(); rendre(); },
+  "tabac-risque": () => { const t = ($("#tb-moment").value || "").trim(), p = ($("#tb-parade").value || "").trim(); if (!t) return; if (!S.tabac) S.tabac = TABAC_DEFAUT(); S.tabac.risques.push({t, p}); sauverBientot(); rendre(); },
+  "tabac-risque-x": (b) => { S.tabac.risques.splice(+b.dataset.i, 1); sauverBientot(); rendre(); }
 };
 function telecharger(contenu, nom, type){ const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([contenu], {type})); a.download = nom; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); }
 async function importer(f){
@@ -897,7 +916,7 @@ let minuteurs = [];
 const stopMinuteurs = () => { minuteurs.forEach(clearTimeout); minuteurs.forEach(clearInterval); minuteurs = []; };
 function ouvreCalque(html){ $("#cbox").innerHTML = html; $("#calque").hidden = false; }
 function fermeCalque(){ stopMinuteurs(); ACTIF = false; if (VERROU_ECRAN) { VERROU_ECRAN.release().catch(() => {}); VERROU_ECRAN = null; }
-  $("#calque").hidden = true; $("#cbox").innerHTML = ""; if (OUVERT && ["sos", "tete", "focus", "social", "auj"].includes(PAGE)) rendre(); }
+  $("#calque").hidden = true; $("#cbox").innerHTML = ""; if (OUVERT && ["sos", "tete", "tabac", "focus", "social", "auj"].includes(PAGE)) rendre(); }
 let SOS = {};
 function sosColere(etape){
   stopMinuteurs();
@@ -1009,6 +1028,26 @@ function defiBandeau(d){
       <div class="sub" style="margin-top:4px">Esprit clair : <b style="color:var(--tx)">${espritJours()} jour(s)</b> <button class="lienb" data-act="esprit-rate">rechute</button></div></div>
     <div class="chips">${v === 1 ? `<span class="propre ok">✓ TENU AUJOURD'HUI</span>` : v === -1 ? `<span class="propre">RECHUTE NOTÉE · ON REPART</span>` :
       `<button class="btn pt" data-act="defi-ok">✓ Tenu aujourd'hui</button><button class="btn sec pt" data-act="defi-rate">J'ai craqué</button>`}</div></div>`;
+}
+function tabacInfo(){
+  const a = auj(), dt = S.reglages.arretCig;
+  if (!dt) return null;
+  if (a < dt) return {avant:true, dans:ecart(a, dt)};
+  const jours = []; for (let d = dt; d <= a; d = plus(d, 1)) jours.push(d);
+  const fumees = jours.reduce((s, d) => s + ((peek(d) || {}).cig || 0), 0);
+  const sans = jours.filter(d => (peek(d) || {}).cig === 0).length;
+  const t0 = lit(dt).getTime(), env = S.envies.filter(e => e.t >= t0);
+  const ref = +S.reglages.avantCig || 0, prix = +S.reglages.prixCig || 0;
+  const garde = jours.reduce((s, d) => { const c = (peek(d) || {}).cig; return s + Math.max(0, ref - (c == null ? 0 : c)); }, 0) * prix;
+  return {avant:false, n:jours.length, jours, fumees, sans, tenues:env.filter(e => e.res === "tenu").length, craques:env.filter(e => e.res === "craque").length, garde, serie:serie(x => x && x.cig === 0)};
+}
+function tabacBandeau(d){
+  if (d !== auj()) return "";
+  const i = tabacInfo(); if (!i) return "";
+  const j = peek(d) || {};
+  const txt = i.avant ? `<b>Ta date d'arrêt : ${longue(S.reglages.arretCig)}.</b> <span class="sub">${i.dans === 1 ? "C'est demain. Ce soir : ta dernière cigarette, puis jette le paquet et le briquet." : "Dans " + i.dans + " jours."}</span>`
+    : `<b>Jour ${i.n} sans cigarette.</b> <span class="sub">${j.cig === 0 ? "Aujourd'hui est noté à zéro. Bravo." : j.cig ? "Une cigarette aujourd'hui : ce n'est pas un échec, la prochaine envie, tu la tiens." : "Ce soir, appuie sur « Zéro aujourd'hui » pour le noter."}</span>`;
+  return `<div class="carte" style="border-color:rgba(255,180,90,.5);margin-bottom:14px;display:flex;align-items:center;gap:12px">🚭 <div style="flex:1">${txt}</div><button class="btn pt" data-act="sos-envie">J'ai envie</button><button class="btn sec pt" data-nav="tabac">Voir</button></div>`;
 }
 function rdvBandeau(d){
   if (d !== auj()) return "";
@@ -1374,6 +1413,64 @@ function respirerNuit(min){
   $("#stop").onclick = () => fermeCalque();
 }
 
+const CORPS = [[1/3, "20 minutes", "Le pouls et la tension commencent à redescendre."],
+  [8, "8 heures", "Le monoxyde de carbone dans le sang baisse de plus de moitié, l'oxygène revient à la normale."],
+  [48, "48 heures", "La nicotine a quitté le corps. Le goût et l'odorat commencent à revenir."],
+  [72, "3 jours", "On respire plus facilement, l'énergie remonte. C'est aussi la fin du plus dur pour le manque."],
+  [24 * 14, "2 à 12 semaines", "La circulation s'améliore : la salle et la marche deviennent plus faciles."],
+  [24 * 90, "3 à 9 mois", "La toux et l'essoufflement diminuent, les poumons travaillent mieux."],
+  [24 * 365, "1 an", "Le risque de crise cardiaque est environ divisé par deux par rapport à un fumeur."]];
+VUES.tabac = () => {
+  const i = tabacInfo() || {avant:true, dans:0}, a = auj(), j = peek(a) || {}, T = S.tabac || TABAC_DEFAUT(), dt = S.reglages.arretCig || "";
+  const heures = dt && !i.avant ? (Date.now() - lit(dt).getTime()) / 36e5 : -1;
+  const F = (n) => Math.round(n).toLocaleString("fr-FR");
+  return `<div class="entete"><div><div class="k" style="color:#ffb45a">ARRÊTER DE FUMER</div><h1>${i.avant ? "Le jour J : <em>" + (i.dans === 1 ? "demain" : "dans " + i.dans + " j") + "</em>" : "Jour <em>" + i.n + "</em> sans cigarette"}</h1></div></div>
+  <div class="stats">
+    <div class="stat vt"><div class="v">${i.avant ? "–" : i.sans}<small> j</small></div><div class="l">Jours à zéro depuis ma date</div></div>
+    <div class="stat or"><div class="v">${i.avant ? "–" : i.tenues}</div><div class="l">Envies vaincues</div></div>
+    <div class="stat cy"><div class="v">${i.avant ? "–" : F(i.garde)}<small> F</small></div><div class="l">Argent gardé</div></div>
+    <div class="stat"><div class="v">${i.avant ? "–" : i.fumees}</div><div class="l">Cigarettes depuis ma date</div></div>
+  </div>
+  <div class="carte" style="margin-bottom:14px"><div class="cit">« Une envie dure 3 à 5 minutes. Je ne la combats pas : je la laisse passer, et elle passe. »<b>Ma règle de poche</b></div></div>
+  <div class="sos2">
+    <button class="gros f" data-act="sos-envie"><b>J'ai envie de fumer</b><span>5 minutes guidées : de l'eau, 20 pompes, marcher, mes ablutions… L'envie redescend.</span></button>
+    <button class="gros t" data-act="sos-stress"><b>Ma tête tourne</b><span>Le stress pousse à fumer. On trie d'abord la pensée, le corps suit.</span></button>
+    <button class="gros v" data-act="tabac-zero"><b>Zéro aujourd'hui ✓</b><span>${j.cig === 0 ? "C'est noté pour aujourd'hui. Une journée de plus de gagnée." : "Le soir, avant de dormir : je note ma journée sans cigarette."}</span></button>
+    <button class="gros m" data-act="tabac-une"><b>J'ai fumé une cigarette</b><span>Pas un échec : je le note, je comprends pourquoi, et je reprends tout de suite.</span></button>
+  </div>
+  <div class="grille">
+    ${i.avant ? `<div class="carte large" style="border-color:rgba(255,180,90,.5)"><h3>${ic("tabac")} La veille du jour J (ce soir)</h3><ol style="margin:6px 0 0;padding-left:20px;line-height:1.6">
+      <li><b>Ta dernière cigarette</b>, en sachant que c'est la dernière.</li>
+      <li><b>Jette</b> le reste du paquet, le briquet et le cendrier. Rien « au cas où ».</li>
+      <li>Prépare de l'<b>eau</b> et des <b>chewing-gums</b>. Si tu peux, demande demain à la pharmacie s'ils ont des <b>gommes ou pastilles à la nicotine</b>.</li>
+      <li>Relis tes raisons, plus bas. Demain matin, tu ouvres cette page.</li></ol></div>` : ""}
+    <div class="carte"><h3>${ic("trophee")} Mes raisons</h3>
+      <div class="liste">${T.raisons.map((r, k) => `<div class="it"><span style="flex:1">${esc(r)}</span><button class="chip" data-act="tabac-raison-x" data-i="${k}">✕</button></div>`).join("") || '<div class="vide">Écris pourquoi tu arrêtes.</div>'}</div>
+      <div class="ligne" style="margin-top:8px"><input class="t" id="tb-raison" placeholder="Une raison de plus…" style="flex:1"><button class="btn pt" data-act="tabac-raison">Ajouter</button></div></div>
+    <div class="carte"><h3>${ic("mental")} Mes moments à risque → ma parade</h3>
+      <div class="liste">${T.risques.map((r, k) => `<div class="it" style="align-items:flex-start"><div style="flex:1"><b>${esc(r.t)}</b><div class="sub">${esc(r.p)}</div></div><button class="chip" data-act="tabac-risque-x" data-i="${k}">✕</button></div>`).join("")}</div>
+      <div class="ligne" style="margin-top:8px"><input class="t" id="tb-moment" placeholder="Le moment (ex : avec le thé)" style="flex:1"><input class="t" id="tb-parade" placeholder="Ce que je fais à la place" style="flex:1.4"><button class="btn pt" data-act="tabac-risque">Ajouter</button></div></div>
+    <div class="carte large"><h3>${ic("salle")} Ce qui se passe dans mon corps</h3>
+      <div class="liste">${CORPS.map(([hh, q, t]) => `<div class="it"><span style="min-width:120px;font-weight:700;color:${heures >= hh ? "var(--vt)" : "var(--mu)"}">${heures >= hh ? "✓ " : ""}${q}</span><span class="sub" style="flex:1">${t}</span></div>`).join("")}</div>
+      <div class="sub" style="margin-top:6px">D'après le NHS (service de santé britannique). Les ✓ se cochent avec le temps depuis ta date.</div></div>
+    <div class="carte"><h3>${ic("foi")} Les 5 premiers jours</h3><ol style="margin:6px 0 0;padding-left:20px;line-height:1.55">
+      <li><b>Jours 1 à 3 : le plus dur.</b> Irritable, envie de grignoter, un peu de mal à dormir ou à se concentrer : c'est le manque qui part, pas toi qui faiblis.</li>
+      <li><b>Chaque envie : 5 minutes.</b> Bouton orange. Elle monte, elle redescend.</li>
+      <li><b>Bouge chaque jour</b> (salle, marche) et bois beaucoup d'eau.</li>
+      <li><b>Évite les pièges</b> les premiers jours : les endroits et les gens qui fument.</li>
+      <li><b>Après une semaine</b>, les envies s'espacent. Au bout d'environ un mois, la plupart des signes du manque ont disparu.</li></ol></div>
+    <div class="carte"><h3>${ic("mental")} Ce que dit la science</h3><ul style="margin:6px 0 0;padding-left:20px;line-height:1.55">
+      <li><b>Arrêter apaise.</b> Une grande revue (Cochrane 2021, 102 études) : en moyenne, ceux qui arrêtent ont <b>moins d'anxiété, de dépression et de stress</b> que ceux qui continuent.</li>
+      <li><b>Arrêter net, à une date fixée</b>, marche mieux que diminuer petit à petit : 22 % contre 15,5 % toujours sans fumer 6 mois après (essai de 2016).</li>
+      <li><b>Une envie passe en 3 à 5 minutes.</b></li>
+      <li><b>Au médecin</b> : dis que tu fumais (la nicotine accélère le cœur) et demande s'il conseille des substituts nicotiniques.</li></ul></div>
+    <div class="carte"><h3>${ic("gear")} Mes réglages</h3>
+      <div class="ligne"><span class="lib">Date d'arrêt</span><input class="t" type="date" data-reg="arretCig" value="${esc(dt)}" style="width:170px"></div>
+      <div class="ligne"><span class="lib">Avant, par jour</span><input class="t n" type="number" min="0" max="60" data-reg="avantCig" value="${esc(S.reglages.avantCig)}"> cigarettes</div>
+      <div class="ligne"><span class="lib">Prix</span><input class="t n" type="number" min="0" data-reg="prixCig" value="${esc(S.reglages.prixCig)}"> F l'unité</div></div>
+  </div>`;
+};
+
 VUES.tete = () => {
   const a = auj(), j = peek(a) || {}, M = (S.tete && S.tete.moments) || [];
   const mes = M.filter(m => m.date >= plus(a, -6) && m.avant != null && m.apres != null);
@@ -1475,7 +1572,7 @@ function fusion(a, b){
     const m = new Map(); for (const it of [...(prendre(a, p) || []), ...(prendre(b, p) || [])]) m.set(JSON.stringify(it), it);
     poser(r, p, [...m.values()].map(copie));
   }
-  for (const k of ["reglages", "planning", "courses", "ennui", "maman", "verites", "semaines"]) if (recent[k] !== undefined) r[k] = copie(recent[k]);
+  for (const k of ["reglages", "planning", "courses", "ennui", "maman", "verites", "semaines", "tabac"]) if (recent[k] !== undefined) r[k] = copie(recent[k]);
   if (recent.social) r.social.defis = copie(recent.social.defis);
   if (recent.focus) r.focus.parking = copie(recent.focus.parking);
   if (a.defi30 || b.defi30) { const vieux = recent === a ? b : a;
@@ -1590,10 +1687,11 @@ function resumeTexte(){
   L.push(`- Défi 30 jours : jour ${I.n ?? "?"} / ${S.defi30 ? S.defi30.duree : 30}, série ${I.serie ?? 0}, ${I.tenus ?? 0} jour(s) tenu(s) ; rechutes notées : ${Object.entries((S.defi30 || {}).jours || {}).filter(([, v]) => v === -1).map(([d]) => d).join(", ") || "aucune"}`);
   L.push(`- Esprit clair : ${espritJours()} jour(s) (dernière rechute ${S.esprit.derniere}, record ${S.esprit.record || 0}, ${S.esprit.rechutes.length} rechute(s) notée(s), ${S.esprit.victoires || 0} envie(s) forte(s) vaincue(s))`);
   L.push(`- Sans cigarette d'affilée : ${serie(x => x && x.cig === 0)} j · journées propres d'affilée : ${serie(propre)} j`);
+  { const ti = tabacInfo(); if (ti) L.push(ti.avant ? `- Arrêt de la cigarette : date fixée au ${S.reglages.arretCig} (dans ${ti.dans} j)` : `- Arrêt de la cigarette (depuis le ${S.reglages.arretCig}) : jour ${ti.n}, ${ti.sans} jour(s) notés à zéro, ${ti.fumees} cigarette(s) fumée(s) depuis, envies : ${ti.tenues} tenue(s), ${ti.craques} craquée(s)`); }
   L.push(`- Maître de mon téléphone (3 cases) : série ${serie(x => x && x.tel && x.tel.contact && x.tel.regard && x.tel.chambre)} j`);
-  L.push("", "## Les 14 derniers jours", "", "| Date | Prières | Salle | Cig | Humeur | Stress | Colère | Maître | Attendre | Parole | Courage | Respi | Sommeil | Défi | Tél |", "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|");
+  L.push("", "## Les 14 derniers jours", "", "| Date | Prières | Salle | Cig | Humeur | Stress | Colère | Maître | Attendre | Parole | Courage | Respi | Sommeil | Énergie | Défi | Tél |", "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|");
   for (const d of jours) { const j = peek(d); if (!j) continue;
-    L.push(`| ${d} | ${j.pr.filter(Boolean).length}/5 | ${j.salle || "·"} | ${j.cig ?? "?"} | ${j.humeur || "·"} | ${j.stress ?? "·"} | ${j.colere ?? "·"} | ${o(j.maitre)} | ${o(j.patient)} | ${o(j.parole)} | ${o(j.courage)} | ${j.respi || 0} | ${j.sommeil || "?"} | ${(S.defi30.jours || {})[d] === 1 ? "tenu" : (S.defi30.jours || {})[d] === -1 ? "rechute" : "·"} | ${j.tel ? (j.tel.contact ? 1 : 0) + (j.tel.regard ? 1 : 0) + (j.tel.chambre ? 1 : 0) + "/3" : "·"} |`); }
+    L.push(`| ${d} | ${j.pr.filter(Boolean).length}/5 | ${j.salle || "·"} | ${j.cig ?? "?"} | ${j.humeur || "·"} | ${j.stress ?? "·"} | ${j.colere ?? "·"} | ${o(j.maitre)} | ${o(j.patient)} | ${o(j.parole)} | ${o(j.courage)} | ${j.respi || 0} | ${j.sommeil || "?"} | ${j.energie || "·"} | ${(S.defi30.jours || {})[d] === 1 ? "tenu" : (S.defi30.jours || {})[d] === -1 ? "rechute" : "·"} | ${j.tel ? (j.tel.contact ? 1 : 0) + (j.tel.regard ? 1 : 0) + (j.tel.chambre ? 1 : 0) + "/3" : "·"} |`); }
   L.push("", "### Ce qu'il a écrit, jour par jour");
   for (const d of jours) { const j = peek(d); if (!j) continue;
     const champs = [["Question", j.rep], ["Ressenti", j.libre], ["Victoire", j.victoire], ["Je lâche", j.lache], ["Demain", j.demain], ["Taf/détente", j.taf && j.taf.t], ["Boutique", j.bout && j.bout.t], ["Maman", j.maman && j.maman.t], ["Mercis", (j.mercis || []).filter(Boolean).join(" ; ")], ["Vidé le soir", j.vidage]].filter(([, v]) => c(v));
